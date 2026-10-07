@@ -35,10 +35,12 @@ function validate(draft: Draft) {
   };
 }
 
-function clampStep(value: string, delta: number, limits: { min: number; max: number }): string {
+/** Moves to the next valid step in `direction`, snapping off-grid values (2.3 -> 2.5 going up). */
+function stepValue(value: string, direction: 1 | -1, limits: { min: number; max: number; step: number }): string {
   const current = Number(value);
-  const base = Number.isFinite(current) ? current : limits.min;
-  return String(Math.min(limits.max, Math.max(limits.min, Math.round((base + delta) * 2) / 2)));
+  const base = Number.isFinite(current) && value.trim() !== '' ? current : limits.min;
+  const index = direction > 0 ? Math.floor(base / limits.step + 1e-9) + 1 : Math.ceil(base / limits.step - 1e-9) - 1;
+  return String(Math.min(limits.max, Math.max(limits.min, index * limits.step)));
 }
 
 export function OptionsScreen({ onBack }: { onBack: () => void }) {
@@ -94,9 +96,7 @@ export function OptionsScreen({ onBack }: { onBack: () => void }) {
             hint={`${SESSION_SECONDS_LIMITS.min}–${SESSION_SECONDS_LIMITS.max} seconds`}
             step={SESSION_SECONDS_LIMITS.step}
             onChange={(value) => change({ sessionSeconds: value })}
-            onStep={(direction) =>
-              change({ sessionSeconds: clampStep(draft.sessionSeconds, direction * SESSION_SECONDS_LIMITS.step, SESSION_SECONDS_LIMITS) })
-            }
+            onStep={(direction) => change({ sessionSeconds: stepValue(draft.sessionSeconds, direction, SESSION_SECONDS_LIMITS) })}
           />
           <StepperField
             id="spawn-interval"
@@ -107,11 +107,7 @@ export function OptionsScreen({ onBack }: { onBack: () => void }) {
             hint={`${SPAWN_INTERVAL_LIMITS.min}–${SPAWN_INTERVAL_LIMITS.max} seconds between enemies`}
             step={SPAWN_INTERVAL_LIMITS.step}
             onChange={(value) => change({ spawnIntervalSeconds: value })}
-            onStep={(direction) =>
-              change({
-                spawnIntervalSeconds: clampStep(draft.spawnIntervalSeconds, direction * SPAWN_INTERVAL_LIMITS.step, SPAWN_INTERVAL_LIMITS),
-              })
-            }
+            onStep={(direction) => change({ spawnIntervalSeconds: stepValue(draft.spawnIntervalSeconds, direction, SPAWN_INTERVAL_LIMITS) })}
           />
 
           <div className="options-field">
