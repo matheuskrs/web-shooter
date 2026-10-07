@@ -120,9 +120,9 @@ export const BASE_GAME_CONFIG: GameConfig = {
   arena: { width: 1600, height: 900 },
   spawn: {
     intervalSeconds: DEFAULT_GAME_OPTIONS.spawnIntervalSeconds,
-    firstSpawnDelaySeconds: 1.5,
+    firstSpawnDelaySeconds: 2,
     weights: { chaser: 3, shooter: 2 },
-    maxAliveEnemies: 10,
+    maxAliveEnemies: 7,
     minDistanceFromPlayer: 520,
     clearance: 60,
   },
@@ -167,7 +167,7 @@ export const BASE_GAME_CONFIG: GameConfig = {
       stationaryTurnFactor: 0.6,
     },
     hull: { circleOffsets: [-27, 0, 27], radius: 17, hitRadiusBonus: 7 },
-    ramDamage: 25,
+    ramDamage: 20,
   },
   shooter: {
     maxHealth: 80,
@@ -180,8 +180,8 @@ export const BASE_GAME_CONFIG: GameConfig = {
     },
     hull: SHIP_HULL,
     cannon: {
-      cooldownSeconds: 1.9,
-      damage: 10,
+      cooldownSeconds: 2.4,
+      damage: 8,
       projectileSpeed: 430,
       range: 560,
       projectileRadius: 5,
