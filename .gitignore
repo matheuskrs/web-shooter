@@ -21,11 +21,9 @@ playwright-report/
 test-results/
 blob-report/
 
-# Editor / local tooling
+# Editors
 .vscode/
 .idea/
-claude/
-.claude/
 
 # Local study notes (not part of the submission)
 CANDIDATE_NOTES.md
