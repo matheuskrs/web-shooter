@@ -1,0 +1,334 @@
+.battle {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--navy-950);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.battle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(8, 19, 31, 0.85));
+  opacity: 0;
+  transition: opacity 1.4s ease-in;
+}
+
+.battle--ended::after {
+  opacity: 1;
+}
+
+.game-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.game-canvas canvas {
+  display: block;
+}
+
+/* ---------- HUD ---------- */
+.hud {
+  --hud-scale: 0.85;
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.hud button {
+  pointer-events: auto;
+}
+
+.hud__health {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hud__heart {
+  width: calc(44px * var(--hud-scale));
+  height: auto;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+}
+
+/* health_frame 256x48, fill_rect 30,15 196x20, clipped from the left */
+.hud-health-bar {
+  --s: var(--hud-scale);
+  position: relative;
+  width: calc(256px * var(--s));
+  height: calc(48px * var(--s));
+  background: image-set(
+      url('../../../assets/png/default/ui/hud/health_frame.png') 1x,
+      url('../../../assets/png/retina/ui/hud/health_frame.png') 2x
+    )
+    center / 100% 100% no-repeat;
+}
+
+.hud-health-bar__fill {
+  position: absolute;
+  left: calc(30px * var(--s));
+  top: calc(15px * var(--s));
+  width: calc(196px * var(--s) * var(--ratio, 1));
+  height: calc(20px * var(--s));
+  background-repeat: no-repeat;
+  background-size: calc(256px * var(--s)) calc(48px * var(--s));
+  background-position: calc(-30px * var(--s)) calc(-15px * var(--s));
+  transition: width 0.25s ease-out;
+}
+
+.hud-health-bar[data-tone='green'] .hud-health-bar__fill {
+  background-image: image-set(
+    url('../../../assets/png/default/ui/hud/health_fill_green.png') 1x,
+    url('../../../assets/png/retina/ui/hud/health_fill_green.png') 2x
+  );
+}
+
+.hud-health-bar[data-tone='amber'] .hud-health-bar__fill {
+  background-image: image-set(
+    url('../../../assets/png/default/ui/hud/health_fill_amber.png') 1x,
+    url('../../../assets/png/retina/ui/hud/health_fill_amber.png') 2x
+  );
+}
+
+.hud-health-bar[data-tone='red'] .hud-health-bar__fill {
+  background-image: image-set(
+    url('../../../assets/png/default/ui/hud/health_fill_red.png') 1x,
+    url('../../../assets/png/retina/ui/hud/health_fill_red.png') 2x
+  );
+}
+
+.hud-health-bar__text {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding-bottom: calc(2px * var(--s));
+  font-family: var(--font-display);
+  font-size: calc(17px * var(--s));
+  color: #fff;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.8),
+    0 0 4px rgba(0, 0, 0, 0.6);
+}
+
+.hud__counters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* counter_panel 160x56 */
+.hud-counter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: calc(160px * var(--hud-scale));
+  height: calc(56px * var(--hud-scale));
+  padding-bottom: 3px;
+  background: image-set(
+      url('../../../assets/png/default/ui/hud/counter_panel.png') 1x,
+      url('../../../assets/png/retina/ui/hud/counter_panel.png') 2x
+    )
+    center / 100% 100% no-repeat;
+}
+
+.hud-counter img {
+  width: calc(30px * var(--hud-scale));
+  height: auto;
+}
+
+.hud-counter__value {
+  min-width: 2.6ch;
+  font-family: var(--font-display);
+  font-size: calc(28px * var(--hud-scale));
+  color: var(--cream);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.hud-counter__value--bump {
+  animation: hud-bump 0.35s ease-out;
+}
+
+.hud-counter--urgent .hud-counter__value {
+  color: var(--danger);
+  animation: hud-pulse 1s ease-in-out infinite;
+}
+
+@keyframes hud-bump {
+  0% {
+    transform: scale(1.6);
+    color: var(--brass);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes hud-pulse {
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+/* ---------- Touch controls ---------- */
+.touch-controls {
+  --button: 66px;
+  position: absolute;
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(10px, env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.touch-controls__cluster {
+  display: grid;
+  grid-template-columns: repeat(3, var(--button));
+  grid-template-rows: calc(var(--button) * 0.55) calc(var(--button) * 0.75);
+  column-gap: 6px;
+  pointer-events: none;
+}
+
+.touch-controls__button {
+  --size: var(--button);
+  pointer-events: auto;
+  grid-row: 2;
+  opacity: 0.92;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45));
+}
+
+/* Forward and bow cannon sit raised in the middle, as in the reference layout. */
+.touch-controls__button:nth-child(2) {
+  grid-row: 1 / span 2;
+  align-self: start;
+}
+
+/* ---------- Dialog ---------- */
+.dialog {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 16px);
+  overflow: visible;
+}
+
+.dialog::backdrop {
+  background: rgba(8, 19, 31, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.dialog__panel {
+  width: min(380px, calc(100vw - 32px));
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  padding: 10px 8px 6px;
+  text-align: center;
+}
+
+.dialog__note {
+  margin: -4px 0 12px;
+  color: var(--cream-muted);
+}
+
+.dialog__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------- Loading ---------- */
+.loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 16px;
+  background:
+    linear-gradient(rgba(8, 19, 31, 0.6), rgba(8, 19, 31, 0.8)),
+    url('../../../assets/ui_scene_background.png') center / cover no-repeat;
+  text-align: center;
+}
+
+.loading__title {
+  width: min(384px, 80vw);
+  height: auto;
+}
+
+.loading__bar {
+  --s: 1.1;
+}
+
+.loading__error {
+  max-width: 420px;
+}
+
+.loading__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* ---------- Portrait hint ---------- */
+.rotate-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  background: rgba(8, 19, 31, 0.92);
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+.rotate-hint img {
+  animation: rotate-hint 2.4s ease-in-out infinite;
+}
+
+@keyframes rotate-hint {
+  0%,
+  20% {
+    transform: rotate(0deg);
+  }
+  50%,
+  80% {
+    transform: rotate(-90deg);
+  }
+}
+
+@media (max-height: 520px) {
+  .hud {
+    --hud-scale: 0.62;
+  }
+
+  .hud .round-button {
+    --size: 42px !important;
+  }
+
+  .touch-controls {
+    --button: 58px;
+  }
+}

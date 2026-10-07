@@ -1,0 +1,181 @@
+.options-panel {
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.options-field {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.options-field__label {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--cream);
+}
+
+.options-field__hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--cream-muted);
+}
+
+.options-field__error {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--danger);
+  text-align: center;
+}
+
+.options-stepper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.options-stepper__value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+}
+
+.options-input {
+  width: 3.4ch;
+  padding: 2px 4px;
+  border: 0;
+  border-bottom: 2px solid rgba(248, 236, 210, 0.3);
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.options-input::-webkit-outer-spin-button,
+.options-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.options-input[aria-invalid='true'] {
+  border-bottom-color: var(--danger);
+}
+
+.options-input--text {
+  width: min(260px, 100%);
+  padding: 6px 10px;
+  border: 2px solid rgba(248, 236, 210, 0.25);
+  border-radius: 8px;
+  background: rgba(8, 19, 31, 0.5);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.options-input--select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 2px solid rgba(248, 236, 210, 0.25);
+  border-radius: 8px;
+  background: var(--navy-900);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.options-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.options-toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--brass);
+}
+
+.options-note {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--cream-muted);
+}
+
+.options-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.options-actions .game-button {
+  --scale: 0.72;
+}
+
+.netsim {
+  width: 100%;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(248, 236, 210, 0.14);
+}
+
+.netsim summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--cream-muted);
+}
+
+.netsim__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.netsim__pending {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.netsim__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.netsim__button {
+  flex: 1;
+  padding: 8px 10px;
+  border: 2px solid rgba(242, 195, 91, 0.6);
+  border-radius: 8px;
+  background: rgba(8, 19, 31, 0.6);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--brass);
+  cursor: pointer;
+}
+
+.netsim__button:hover:not(:disabled) {
+  background: rgba(242, 195, 91, 0.15);
+}
+
+.netsim__button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

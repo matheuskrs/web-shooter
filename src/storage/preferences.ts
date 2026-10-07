@@ -15,7 +15,7 @@ export const CAPTAIN_NAME_MAX_LENGTH = 16;
 
 export const DEFAULT_PREFERENCES: Preferences = {
   ...DEFAULT_GAME_OPTIONS,
-  captainName: 'Captain',
+  captainName: 'Captain Jack',
   muted: false,
 };
 

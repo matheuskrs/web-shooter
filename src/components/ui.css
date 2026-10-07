@@ -1,0 +1,211 @@
+/*
+ * Official Pirate Battle UI art applied to semantic elements.
+ * Sizes and insets come from ui_sheet.json (logical 1x units):
+ *   panel_menu      borders 40/32, content_rect inset 30/26
+ *   button (256x88) label_rect 32.5,19.5 191x46.5
+ *   round (64x64)   icon_render_size 32
+ * image-set() serves the retina file on high-density screens.
+ */
+
+/* ---------- Panel (9-slice) ---------- */
+.panel {
+  border-style: solid;
+  border-width: 40px 32px;
+  border-image: image-set(
+      url('../../assets/png/default/ui/menu/panel_menu.png') 1x,
+      url('../../assets/png/retina/ui/menu/panel_menu.png') 2x
+    )
+    40 32 fill / 40px 32px;
+  padding: 2px 4px;
+  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.45));
+}
+
+.panel__title {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 2rem;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: var(--cream);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* ---------- Menu buttons ---------- */
+.game-button {
+  --scale: 0.9;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(256px * var(--scale));
+  height: calc(88px * var(--scale));
+  /* label_rect insets: 19.5 top, 32.5 sides, 22 bottom */
+  padding: calc(19.5px * var(--scale)) calc(32.5px * var(--scale)) calc(22px * var(--scale));
+  border: 0;
+  background: transparent center / 100% 100% no-repeat;
+  font-family: var(--font-display);
+  font-size: calc(26px * var(--scale));
+  line-height: 1;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.game-button--small {
+  --scale: 0.62;
+  font-size: calc(30px * var(--scale));
+}
+
+.game-button--primary {
+  color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255, 236, 190, 0.6);
+  background-image: image-set(
+    url('../../assets/png/default/ui/menu/button_primary_normal.png') 1x,
+    url('../../assets/png/retina/ui/menu/button_primary_normal.png') 2x
+  );
+}
+
+.game-button--primary:hover {
+  background-image: image-set(
+    url('../../assets/png/default/ui/menu/button_primary_hover.png') 1x,
+    url('../../assets/png/retina/ui/menu/button_primary_hover.png') 2x
+  );
+}
+
+.game-button--primary:active,
+.game-button--primary[aria-pressed='true'],
+.game-button--primary[aria-selected='true'] {
+  background-image: image-set(
+    url('../../assets/png/default/ui/menu/button_primary_pressed.png') 1x,
+    url('../../assets/png/retina/ui/menu/button_primary_pressed.png') 2x
+  );
+}
+
+.game-button--primary:disabled {
+  cursor: not-allowed;
+  color: #5d5446;
+  text-shadow: none;
+  background-image: image-set(
+    url('../../assets/png/default/ui/menu/button_primary_disabled.png') 1x,
+    url('../../assets/png/retina/ui/menu/button_primary_disabled.png') 2x
+  );
+}
+
+.game-button--secondary {
+  color: var(--cream);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+  background-image: image-set(
+    url('../../assets/png/default/ui/menu/button_secondary_normal.png') 1x,
+    url('../../assets/png/retina/ui/menu/button_secondary_normal.png') 2x
+  );
+}
+
+/* The pack has no secondary hover art; brighten the normal state instead. */
+.game-button--secondary:hover {
+  filter: brightness(1.18);
+}
+
+.game-button--secondary:active {
+  background-image: image-set(
+    url('../../assets/png/default/ui/menu/button_secondary_pressed.png') 1x,
+    url('../../assets/png/retina/ui/menu/button_secondary_pressed.png') 2x
+  );
+}
+
+.game-button--secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+
+.game-button:focus-visible {
+  outline-offset: -2px;
+  border-radius: 18px;
+}
+
+/* ---------- Round buttons ---------- */
+.round-button {
+  --size: 52px;
+  display: inline-grid;
+  place-items: center;
+  width: var(--size);
+  height: var(--size);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent center / 100% 100% no-repeat;
+  background-image: image-set(
+    url('../../assets/png/default/ui/controls/button_round_normal.png') 1x,
+    url('../../assets/png/retina/ui/controls/button_round_normal.png') 2x
+  );
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.round-button:hover {
+  background-image: image-set(
+    url('../../assets/png/default/ui/controls/button_round_hover.png') 1x,
+    url('../../assets/png/retina/ui/controls/button_round_hover.png') 2x
+  );
+}
+
+.round-button:active,
+.round-button[data-held='true'] {
+  background-image: image-set(
+    url('../../assets/png/default/ui/controls/button_round_pressed.png') 1x,
+    url('../../assets/png/retina/ui/controls/button_round_pressed.png') 2x
+  );
+}
+
+.round-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.round-button img {
+  /* icon_render_size is half of the 64px button */
+  width: 50%;
+  height: 50%;
+  pointer-events: none;
+}
+
+.round-button[data-held='true'] img {
+  transform: translateY(1px) scale(0.94);
+}
+
+/* ---------- Misc ---------- */
+.status-text {
+  min-height: 1.4em;
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  text-align: center;
+  color: var(--cream-muted);
+}
+
+.status-text--error {
+  color: var(--danger);
+}
+
+.status-text--success {
+  color: var(--success);
+}
+
+.keycap {
+  display: inline-block;
+  min-width: 1.8em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(248, 236, 210, 0.35);
+  border-bottom-width: 3px;
+  background: rgba(8, 19, 31, 0.55);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--cream);
+}
