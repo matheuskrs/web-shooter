@@ -6,6 +6,7 @@ node_modules/
 
 # Build output
 dist/
+dist-e2e/
 
 # Environment
 .env
@@ -14,3 +15,17 @@ dist/
 
 # Logs
 *.log
+
+# Test output
+playwright-report/
+test-results/
+blob-report/
+
+# Editor / local tooling
+.vscode/
+.idea/
+claude/
+.claude/
+
+# Local study notes (not part of the submission)
+CANDIDATE_NOTES.md
