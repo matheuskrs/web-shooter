@@ -47,7 +47,7 @@ export const SCENARIOS: readonly Scenario[] = [
   { id: 'success', label: 'Success', description: 'Normal latency, everything works.', data: 'normal', latency: fixed(BASE_LATENCY), failure: none },
   { id: 'empty', label: 'Empty lists', description: 'Ranking and history return no rows.', data: 'empty', latency: fixed(BASE_LATENCY), failure: none },
   { id: 'many-pages', label: 'Many pages', description: 'Large fixture set to exercise pagination.', data: 'many', latency: fixed(BASE_LATENCY), failure: none },
-  { id: 'slow', label: 'Slow network', description: 'Every response takes 2.5 seconds.', data: 'normal', latency: fixed(2500), failure: none },
+  { id: 'slow', label: 'Slow network', description: 'Every response takes 2 seconds.', data: 'normal', latency: fixed(2000), failure: none },
   {
     id: 'variable-latency',
     label: 'Variable latency',

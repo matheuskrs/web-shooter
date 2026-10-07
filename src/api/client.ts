@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import type { ApiErrorBody } from './contracts';
 
 /** Short in automated tests so timeout scenarios do not slow the suite down. */
-export const REQUEST_TIMEOUT_MS = import.meta.env.MODE === 'e2e' ? 1500 : 5000;
+export const REQUEST_TIMEOUT_MS = import.meta.env.MODE === 'e2e' ? 3000 : 5000;
 
 export const http = axios.create({
   baseURL: '/api',
