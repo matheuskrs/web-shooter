@@ -4,6 +4,7 @@ import type { GameUiStore } from '../../game/bridge/GameUiStore';
 import type { GameConfig } from '../../game/config/gameConfig';
 import { GameSession, type MatchOutcome } from '../../game/core/GameSession';
 import type { InputState } from '../../game/input/InputState';
+import { perfModeEnabled } from '../../game/diagnostics/diagnostics';
 import { trackSession } from '../../game/testing/testApi';
 
 interface GameCanvasProps {
@@ -41,6 +42,7 @@ export function GameCanvas({ config, seed, input, store, manualClock, onEnded, o
       audio,
       textures: assets.textures,
       manualClock,
+      profile: perfModeEnabled,
       onEnded: (outcome) => callbacks.current.onEnded(outcome),
     });
     const untrack = trackSession(session);

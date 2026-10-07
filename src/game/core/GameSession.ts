@@ -5,6 +5,8 @@ import type { AudioManager } from '../audio/AudioManager';
 import { BattleAudio } from '../audio/BattleAudio';
 import type { GameUiStore, PauseReason } from '../bridge/GameUiStore';
 import type { GameConfig } from '../config/gameConfig';
+import { diagnostics } from '../diagnostics/diagnostics';
+import { PerfMonitor, type PerfSnapshot } from '../diagnostics/PerfMonitor';
 import type { InputState } from '../input/InputState';
 import { KeyboardInput } from '../input/KeyboardInput';
 import { Rng } from '../math/rng';
@@ -35,6 +37,8 @@ export interface GameSessionOptions {
   seed: number;
   /** When true the simulation only advances through `advanceManually` (tests). */
   manualClock?: boolean;
+  /** Record frame timings and entity counts (`?perf`). */
+  profile?: boolean;
   onEnded: (outcome: MatchOutcome) => void;
 }
 
@@ -59,6 +63,8 @@ export class GameSession {
   private disposed = false;
   private paused = false;
   private endNotified = false;
+  private listenersAttached = false;
+  private readonly perf: PerfMonitor | null;
 
   constructor(private readonly options: GameSessionOptions) {
     this.world = new World(options.config, buildObstacles(ARENA_LAYOUT), new Rng(options.seed), ARENA_LAYOUT.playerSpawn);
@@ -74,6 +80,12 @@ export class GameSession {
       isActive: () => !this.paused && this.world.phase === 'running',
     });
     this.battleAudio = new BattleAudio(options.audio, new Rng(options.seed ^ 0xa5a5a5));
+    this.perf = options.profile ? new PerfMonitor() : null;
+    diagnostics.sessionsCreated++;
+  }
+
+  get perfSnapshot(): PerfSnapshot | null {
+    return this.perf?.snapshot() ?? null;
   }
 
   get isDisposed(): boolean {
@@ -116,6 +128,9 @@ export class GameSession {
     this.keyboard.attach();
     window.addEventListener('blur', this.handleBlur);
     document.addEventListener('visibilitychange', this.handleVisibility);
+    this.listenersAttached = true;
+    // keydown + keyup + blur + visibilitychange + ticker
+    diagnostics.attachedListeners += 5;
 
     this.publishHud();
     this.options.store.update({ phase: 'running' });
@@ -159,6 +174,8 @@ export class GameSession {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    diagnostics.sessionsDisposed++;
+    if (this.listenersAttached) diagnostics.attachedListeners -= 5;
     this.keyboard.detach();
     window.removeEventListener('blur', this.handleBlur);
     document.removeEventListener('visibilitychange', this.handleVisibility);
@@ -178,6 +195,15 @@ export class GameSession {
   private readonly tick = (ticker: Ticker): void => {
     if (this.disposed || this.paused) return;
     this.loop.advance(ticker.deltaMS / 1000);
+    if (this.perf && this.renderer && this.world.phase === 'running') {
+      const stats = this.renderer.spriteCounts;
+      this.perf.recordFrame(ticker.deltaMS, {
+        ships: this.world.ships.length,
+        projectiles: this.world.projectiles.length,
+        effects: stats.effects,
+        wrecks: stats.wrecks,
+      });
+    }
   };
 
   private readonly handleBlur = (): void => this.pause('focus-lost');
@@ -208,6 +234,7 @@ export class GameSession {
     this.publishHud();
     if (this.world.phase === 'ended' && !this.endNotified) {
       this.endNotified = true;
+      if (this.perf) diagnostics.reports.push(this.perf.report(this.world.elapsed));
       this.options.store.update({ phase: 'ended', endReason: this.world.endReason });
       this.options.onEnded({
         score: this.world.score,

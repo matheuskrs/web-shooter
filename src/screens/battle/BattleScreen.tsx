@@ -11,6 +11,8 @@ import { BattleAnnouncer } from './BattleAnnouncer';
 import { BattleHud } from './BattleHud';
 import { GameCanvas } from './GameCanvas';
 import { LoadingOverlay } from './LoadingOverlay';
+import { PerfOverlay } from './PerfOverlay';
+import { perfModeEnabled } from '../../game/diagnostics/diagnostics';
 import { TouchControls } from './TouchControls';
 import './battle.css';
 
@@ -79,6 +81,7 @@ export function BattleScreen({ match, manualClock, onEnded, onFinished, onRestar
           <BattleHud store={store} onPause={() => session?.pause('manual')} />
           {touchWanted && <TouchControls input={input} disabled={hud.phase !== 'running'} />}
           <BattleAnnouncer store={store} />
+          {perfModeEnabled && <PerfOverlay session={session} />}
         </>
       ) : (
         <LoadingOverlay state={loader} onRetry={() => void assets.load()} onQuit={onQuit} />

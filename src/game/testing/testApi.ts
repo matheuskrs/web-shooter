@@ -1,5 +1,6 @@
 import type { EnemyKind, ShipKind } from '../config/gameConfig';
 import type { GameSession } from '../core/GameSession';
+import { diagnostics } from '../diagnostics/diagnostics';
 import { spawnEnemy } from '../systems/spawnSystem';
 
 /**
@@ -57,8 +58,6 @@ declare global {
 }
 
 let current: GameSession | null = null;
-let created = 0;
-let disposed = 0;
 
 function snapshotShip(ship: GameSession['world']['player']): TestShipSnapshot {
   return {
@@ -113,15 +112,18 @@ export function installTestApi(): void {
     setAutoSpawn: (enabled) => {
       if (current) current.world.spawner.timer = enabled ? current.world.config.spawn.intervalSeconds : Number.POSITIVE_INFINITY;
     },
-    lifecycle: () => ({ created, disposed, live: created - disposed }),
+    lifecycle: () => ({
+      created: diagnostics.sessionsCreated,
+      disposed: diagnostics.sessionsDisposed,
+      live: diagnostics.sessionsCreated - diagnostics.sessionsDisposed,
+    }),
   };
 }
 
+/** Points the test API at the mounted session; the returned function forgets it. */
 export function trackSession(session: GameSession): () => void {
-  created++;
   current = session;
   return () => {
-    disposed++;
     if (current === session) current = null;
   };
 }

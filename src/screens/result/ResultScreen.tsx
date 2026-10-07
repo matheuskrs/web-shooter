@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { navigate } from '../../app/navigation';
 import { useIsRegistering, useSubmitMatch } from '../../api/queries';
 import { GameButton } from '../../components/GameButton';
+import { perfModeEnabled } from '../../game/diagnostics/diagnostics';
+import { PerfReportPanel } from '../battle/PerfOverlay';
 import { lastResultStore, pendingMatchesStore } from '../../storage/matchStorage';
 import { useStoredValue } from '../../storage/storedValue';
 import { formatClock } from '../../utils/format';
@@ -78,6 +80,7 @@ export function ResultScreen({ onPlayAgain, onMenu }: { onPlayAgain: () => void;
               Main Menu
             </GameButton>
           </div>
+          {perfModeEnabled && <PerfReportPanel />}
         </section>
       </main>
     </>

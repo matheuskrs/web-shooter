@@ -13,7 +13,7 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
-            { name: 'pixi', test: /node_modules[\/]pixi\.js/ },
+            { name: 'pixi', test: /node_modules\/pixi\.js/ },
             { name: 'vendor', test: /node_modules/ },
           ],
         },

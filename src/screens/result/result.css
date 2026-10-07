@@ -104,3 +104,13 @@
     margin-top: 4px;
   }
 }
+
+.perf-report {
+  margin-top: 8px;
+  font: 12px/1.4 ui-monospace, Consolas, monospace;
+  color: var(--cream-muted);
+}
+
+.perf-report p {
+  margin: 0 0 4px;
+}
