@@ -76,9 +76,26 @@ select {
   position: relative;
   min-height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  /* "safe" keeps tall content scrollable instead of clipping its top on short screens. */
+  align-items: safe center;
+  justify-content: safe center;
   padding: 24px 16px;
+}
+
+/* Phones in landscape: tighter spacing and actions side by side. */
+@media (max-height: 500px) {
+  .screen {
+    padding: 10px 16px;
+  }
+
+  .panel__title {
+    font-size: 1.5rem !important;
+    margin-bottom: 4px;
+  }
+
+  .game-button {
+    --scale: 0.66;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

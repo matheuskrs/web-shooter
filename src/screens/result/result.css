@@ -88,3 +88,19 @@
   gap: 4px;
   margin-top: 8px;
 }
+
+@media (max-height: 500px) {
+  .result-panel {
+    width: min(520px, 100%);
+    gap: 2px;
+  }
+
+  .result-panel__score {
+    font-size: 3.4rem;
+  }
+
+  .result-panel__actions {
+    flex-direction: row;
+    margin-top: 4px;
+  }
+}

@@ -320,6 +320,16 @@
 }
 
 @media (max-height: 520px) {
+  .dialog__panel {
+    width: min(560px, calc(100vw - 32px));
+  }
+
+  .dialog__actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
   .hud {
     --hud-scale: 0.62;
   }

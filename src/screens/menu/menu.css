@@ -297,6 +297,16 @@
   text-transform: uppercase;
 }
 
+@media (max-height: 500px) {
+  .menu-panel__title img {
+    width: 240px;
+  }
+
+  .menu-panel__actions {
+    flex-direction: row;
+  }
+}
+
 @media (max-width: 560px) {
   .log-table td,
   .log-table th {
