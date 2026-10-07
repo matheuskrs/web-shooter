@@ -29,4 +29,9 @@ export default tseslint.config(
     files: ['e2e/**/*.ts', '*.config.ts'],
     languageOptions: { globals: { ...globals.node } },
   },
+  {
+    // In tests a missing value should fail the assertion, not be guarded.
+    files: ['e2e/**/*.ts', 'src/**/*.test.ts'],
+    rules: { '@typescript-eslint/no-non-null-assertion': 'off' },
+  },
 );
