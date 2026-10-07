@@ -50,8 +50,10 @@ describe('stepSimulation', () => {
     const input = new InputState();
     input.press('forward', 'test');
     run(world, input, 4);
-    const bowX = world.player.x + 28 + 17;
+    const { circleOffsets, radius } = world.config.player.hull;
+    const bowX = world.player.x + Math.max(...circleOffsets) + radius;
     expect(bowX).toBeLessThanOrEqual(1000 + 0.5);
+    expect(bowX).toBeGreaterThan(990);
   });
 
   it('applies a projectile hit once and awards one point per kill', () => {

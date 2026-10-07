@@ -112,7 +112,7 @@ export const DEFAULT_GAME_OPTIONS: PlayerGameOptions = {
   spawnIntervalSeconds: 3,
 };
 
-const SHIP_HULL: HullConfig = { circleOffsets: [-28, 0, 28], radius: 17, hitRadiusBonus: 7 };
+const SHIP_HULL: HullConfig = { circleOffsets: [-32, 0, 32], radius: 20, hitRadiusBonus: 8 };
 
 export const BASE_GAME_CONFIG: GameConfig = {
   rulesetVersion: RULESET_VERSION,
@@ -144,7 +144,7 @@ export const BASE_GAME_CONFIG: GameConfig = {
       projectileRadius: 5,
       projectileCount: 1,
       spacing: 0,
-      muzzleOffset: 50,
+      muzzleOffset: 58,
     },
     broadside: {
       cooldownSeconds: 1.4,
@@ -153,8 +153,8 @@ export const BASE_GAME_CONFIG: GameConfig = {
       range: 420,
       projectileRadius: 6,
       projectileCount: 3,
-      spacing: 26,
-      muzzleOffset: 22,
+      spacing: 30,
+      muzzleOffset: 26,
     },
   },
   chaser: {
@@ -166,11 +166,11 @@ export const BASE_GAME_CONFIG: GameConfig = {
       turnRate: 2.3,
       stationaryTurnFactor: 0.6,
     },
-    hull: { circleOffsets: [-22, 0, 22], radius: 15, hitRadiusBonus: 7 },
+    hull: { circleOffsets: [-27, 0, 27], radius: 17, hitRadiusBonus: 7 },
     ramDamage: 25,
   },
   shooter: {
-    maxHealth: 60,
+    maxHealth: 80,
     movement: {
       maxSpeed: 120,
       acceleration: 220,
@@ -187,7 +187,7 @@ export const BASE_GAME_CONFIG: GameConfig = {
       projectileRadius: 5,
       projectileCount: 1,
       spacing: 0,
-      muzzleOffset: 50,
+      muzzleOffset: 58,
     },
     behaviour: {
       attackRange: 500,

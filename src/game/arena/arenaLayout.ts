@@ -7,7 +7,6 @@ export const TILE = {
   water: 73,
   shallow: { topLeft: 10, top: 11, topRight: 12, left: 26, center: 27, right: 28, bottomLeft: 42, bottom: 43, bottomRight: 44 },
   sand: { topLeft: 1, top: 2, topRight: 3, left: 17, center: 18, right: 19, bottomLeft: 33, bottom: 34, bottomRight: 35 },
-  sandVariants: [18, 18, 18, 68, 69],
   grassIsland: [
     [6, 7, 8, 9],
     [22, 23, 24, 25],

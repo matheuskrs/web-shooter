@@ -61,5 +61,8 @@ function fire(world: World, ship: Ship, slot: WeaponSlot, weapon: WeaponConfig):
     x: ship.x + dirX * weapon.muzzleOffset,
     y: ship.y + dirY * weapon.muzzleOffset,
     angle,
+    keelAngle: ship.heading,
+    count: weapon.projectileCount,
+    spacing: weapon.spacing,
   });
 }

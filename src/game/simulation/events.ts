@@ -10,7 +10,19 @@ export type DestroyCause = 'cannon' | 'ram';
  * bridge consume them after the step; none of them can change gameplay.
  */
 export type GameEvent =
-  | { type: 'shotFired'; shipId: number; team: Team; slot: WeaponSlot; x: number; y: number; angle: number }
+  | {
+      type: 'shotFired';
+      shipId: number;
+      team: Team;
+      slot: WeaponSlot;
+      /** Centre muzzle; parallel guns sit `spacing` apart along `keelAngle`. */
+      x: number;
+      y: number;
+      angle: number;
+      keelAngle: number;
+      count: number;
+      spacing: number;
+    }
   | { type: 'shipHit'; shipId: number; team: Team; x: number; y: number; damage: number }
   | { type: 'projectileSplash'; x: number; y: number }
   | { type: 'projectileHitObstacle'; x: number; y: number }
