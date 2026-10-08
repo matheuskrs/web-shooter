@@ -14,6 +14,7 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             { name: 'pixi', test: /node_modules\/pixi\.js/ },
+            { name: 'antd', test: /node_modules\/(antd|@ant-design|@rc-component|rc-[a-z-]+)\// },
             { name: 'vendor', test: /node_modules/ },
           ],
         },
