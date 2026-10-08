@@ -23,36 +23,52 @@ Frame intervals come from the Pixi ticker's real `deltaMS`, measured only while 
 
 | Field | Value |
 | --- | --- |
-| CPU / GPU | _fill in_ |
-| RAM | _fill in_ |
-| OS | _fill in_ |
-| Browser and version | _fill in_ |
-| Window resolution / DPR | _fill in (also in the JSON report)_ |
-| Build | production (`npm run build`), `?perf` |
+| CPU | AMD Ryzen 7 5700X (8 cores) |
+| GPU | AMD Radeon RX 9060 XT |
+| RAM | 16 GB |
+| OS | Windows 11 Pro |
+| Browser | Chrome 155 (desktop) |
+| Display | 1920 × 1080 @ 180 Hz; browser viewport 1920 × 945, DPR 1 |
+| Build | production deployment (https://web-shooter-omega.vercel.app/?perf) |
 | Match configuration | 180 s session, 3 s spawn interval, ruleset 1 |
 
-## Results: three-minute match
+## Results: match run
+
+Measured on 2026-10-08 from the in-game report (`?perf`, "Copy profiling JSON"). Frame intervals are the Pixi ticker's real deltas, collected only while the match was running.
 
 | Metric | Value |
 | --- | --- |
-| Average FPS | _from report_ |
-| p95 frame interval | _from report_ |
-| p99 / max frame interval | _from report_ |
-| Peak entities (ships / balls / effects) | _from report_ |
-| Effective match duration | _from report_ |
+| Effective match duration | 83.9 s (the match ended before the 180 s limit) |
+| Frames recorded | 15 095 |
+| Average FPS | 180.0 |
+| p95 frame interval | 5.70 ms |
+| p99 / max frame interval | 5.70 ms / 5.80 ms |
+| Peak entities | 64 (6 ships, 2 cannonballs, 54 effect particles, 2 sinking wrecks) |
+| JS heap at the result screen | 18.0 MB |
+
+**Reading the numbers.** The display refreshes at 180 Hz and the browser synchronises frames to it, so 180 FPS is the vsync ceiling, not the game's limit. The p95 and the worst frame (5.8 ms) both sit at the 5.56 ms refresh interval, meaning no frame was dropped during the run. The 60 FPS target (16.7 ms per frame) is met with about 3× headroom on this machine.
+
+At the result screen the counters read 2 sessions created and 1 disposed. That is expected: the finished match stays on screen behind the result until the player leaves, and the earlier match had already been disposed.
 
 ## Results: five start → play → leave cycles
 
+Not measured yet. Follow step 4 of the procedure above and record the heap snapshots here.
+
 | Metric | Baseline | After 5 cycles |
 | --- | --- | --- |
-| JS heap after GC | _fill in_ | _fill in_ |
-| Live `Application` / `Sprite` / `Texture` objects | _fill in_ | _fill in_ |
-| Detached canvases | _fill in_ | _fill in_ |
-| Overlay: live sessions / listeners | – | _fill in_ |
+| JS heap after GC | – | – |
+| Live `Application` / `Sprite` / `Texture` objects | – | – |
+| Detached canvases | – | – |
+| Overlay: live sessions / listeners | – | – |
+
+What *is* verified automatically: the E2E suite (`match-flow.spec.ts`, `world.spec.ts`) runs repeated start → leave cycles and asserts that every match session is disposed (`live === 0`) and that a single canvas exists.
 
 ## Observations and limitations
 
-_Record what was observed (for example long frames on first Play while textures upload, behaviour at peak effects) and anything that could not be measured._
+- The recorded match lasted 83.9 s of active play, not the full three minutes the brief asks for. A full 180 s run is still pending.
+- One machine and one browser only. Low-end and mobile devices have not been profiled; there the motion blur already uses fewer samples on touch screens.
+- Effect particles peaked at 54 and dominate the entity count. They are created per effect rather than pooled; at this frame time pooling is not needed.
+- Not measured: the menu's attract world (up to six ships) and the camera travel with motion blur. Both run only outside a match.
 
 ### Expected costs, for context
 

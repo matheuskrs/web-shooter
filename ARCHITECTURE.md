@@ -193,4 +193,4 @@ The values live in `BASE_GAME_CONFIG`; `RULESET_VERSION` is bumped whenever they
 - Audio is uncompressed WAV from the pack, about 6 MB, loaded with the battle. Converting it to compressed formats would cut load time.
 - Visual baselines are recorded on Windows and need re-recording on other platforms.
 - The menu sea keeps simulating up to six ships while a menu is open; its cost has not been profiled yet.
-- Profiling numbers must be collected on the reference machine; see [docs/performance.md](docs/performance.md).
+- Profiling covers one desktop machine and an 84 s match so far; see [docs/performance.md](docs/performance.md).
