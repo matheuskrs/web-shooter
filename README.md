@@ -2,7 +2,7 @@
 
 A top-down naval arcade shooter built with **React**, **TypeScript (strict)** and **PixiJS**. Sail between islands, sink Chasers and Shooters, and climb the Captain's Log. Ranking and match history run against a mocked REST API (**MSW**) consumed with **Axios** and **TanStack Query**; **Playwright** covers the flows end to end, including visual regression.
 
-- Deployed build: _add the public URL here after deploying (see [Deploy](#deploy))_
+- **Play it:** https://web-shooter-omega.vercel.app
 - Design and code decisions: [ARCHITECTURE.md](ARCHITECTURE.md)
 - Test report: [docs/test-report.md](docs/test-report.md) · Profiling: [docs/performance.md](docs/performance.md)
 
