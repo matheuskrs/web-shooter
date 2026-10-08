@@ -189,6 +189,8 @@ export class WorldHost {
     this.attract?.setFocus(anchor);
     if (leaving) {
       leaving.session.halt();
+      // The arena edge belongs to the battle; it must not linger while the camera flies off.
+      leaving.session.setBoundaryAlpha(0);
       this.outgoing.add(leaving.session);
     }
     const swap = () => {
@@ -239,6 +241,7 @@ export class WorldHost {
     const previous = this.match;
     if (previous) {
       previous.session.halt();
+      previous.session.setBoundaryAlpha(0);
       this.outgoing.add(previous.session);
     }
     const runtime: MatchRuntime = { matchId: setup.matchId, store, input, session };

@@ -74,6 +74,6 @@ What *is* verified automatically: the E2E suite (`match-flow.spec.ts`, `world.sp
 
 These are design facts, not measurements:
 
-- Each Play creates a new Pixi `Application` and uploads the textures to its WebGL context, so the first frames after Play can be slower.
+- The page keeps one Pixi `Application` for its whole lifetime; each Play only creates the match's sprites, behind the camera's travel.
 - Effect particles are created and destroyed per effect rather than pooled. The peak entity count in the report shows whether pooling would be worthwhile.
 - Islands are baked once with `cacheAsTexture`; the water consists of two `TilingSprite`s.

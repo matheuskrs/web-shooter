@@ -3,8 +3,10 @@ import { TILE, TILE_SIZE, type IslandLayout, type SceneryLayout } from '../arena
 import type { GameTextures } from '../assets/AssetLoader';
 import type { GeneratedTextures } from './GeneratedTextures';
 
-const OUTSIDE_TINT = 0x0b1a2b;
-const OUTSIDE_ALPHA = 0.5;
+/** A thin, quiet line marks where the arena ends; the sea itself is not darkened. */
+const BOUNDARY_COLOR = 0xffffff;
+const BOUNDARY_ALPHA = 0.28;
+const BOUNDARY_WIDTH = 2;
 /** The shimmer layer trails the camera slightly, a cheap hint of depth while travelling. */
 const SHIMMER_PARALLAX = 0.12;
 
@@ -24,7 +26,7 @@ export interface ArenaViewOptions {
    * so the water of different scenes lines up when the camera swaps them.
    */
   seaMargin: number;
-  /** Darken the sea outside `bounds`: the edge of a match arena. */
+  /** Draw the edge of `bounds`: the limit of a match arena. */
   showBoundary: boolean;
 }
 
@@ -77,7 +79,7 @@ export class ArenaView {
       this.container.addChild(sprite);
     }
 
-    this.boundary = options.showBoundary ? buildOutsideShade(bounds, seaMargin) : null;
+    this.boundary = options.showBoundary ? buildBoundaryLine(bounds) : null;
     if (this.boundary) this.container.addChild(this.boundary);
   }
 
@@ -144,15 +146,8 @@ function buildIsland(island: IslandLayout, textures: GameTextures): Container {
   return container;
 }
 
-/** Darkens the sea outside the playable rectangle so the boundary reads clearly. */
-function buildOutsideShade(bounds: { width: number; height: number }, margin: number): Graphics {
-  const { width, height } = bounds;
+function buildBoundaryLine(bounds: { width: number; height: number }): Graphics {
   return new Graphics()
-    .rect(-margin, -margin, width + margin * 2, margin)
-    .rect(-margin, height, width + margin * 2, margin)
-    .rect(-margin, 0, margin, height)
-    .rect(width, 0, margin, height)
-    .fill({ color: OUTSIDE_TINT, alpha: OUTSIDE_ALPHA })
-    .rect(0, 0, width, height)
-    .stroke({ color: 0xffffff, alpha: 0.18, width: 3, alignment: 1 });
+    .rect(0, 0, bounds.width, bounds.height)
+    .stroke({ color: BOUNDARY_COLOR, alpha: BOUNDARY_ALPHA, width: BOUNDARY_WIDTH, alignment: 1 });
 }
