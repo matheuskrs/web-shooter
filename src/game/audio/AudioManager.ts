@@ -4,6 +4,8 @@ export interface PlayOptions {
   volume?: number;
   /** Playback rate; small random variations keep repeated cannon shots from sounding identical. */
   rate?: number;
+  /** Ignore calls arriving sooner than this after the previous play of the same sound. */
+  minIntervalMs?: number;
 }
 
 export interface LoopHandle {
@@ -26,6 +28,7 @@ export class AudioManager {
   /** Files fetched before the context existed; decoded on unlock. */
   private readonly pendingData = new Map<string, ArrayBuffer>();
   private readonly voices = new Map<string, number>();
+  private readonly lastPlayedAt = new Map<string, number>();
   private readonly loops = new Set<LoopHandle>();
   private muted = false;
 
@@ -86,6 +89,11 @@ export class AudioManager {
     if (!context || !this.master || !buffer || context.state !== 'running') return;
     const active = this.voices.get(name) ?? 0;
     if (active >= MAX_VOICES_PER_SOUND) return;
+    if (options.minIntervalMs !== undefined) {
+      const now = context.currentTime * 1000;
+      if (now - (this.lastPlayedAt.get(name) ?? -Infinity) < options.minIntervalMs) return;
+      this.lastPlayedAt.set(name, now);
+    }
 
     const source = context.createBufferSource();
     source.buffer = buffer;

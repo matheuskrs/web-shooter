@@ -43,9 +43,29 @@ export interface RockLayout {
   radius: number;
 }
 
-export interface ArenaLayout {
+/**
+ * Free-standing scenery in world coordinates: a tile (`tile`) or a frame of
+ * the ships atlas (`frame`, e.g. a grey wreck). A `radius` makes it solid.
+ */
+export interface PropLayout {
+  tile?: number;
+  frame?: string;
+  x: number;
+  y: number;
+  rotation?: number;
+  scale?: number;
+  alpha?: number;
+  radius?: number;
+}
+
+/** Everything drawn and collided with, without gameplay data. */
+export interface SceneryLayout {
   islands: readonly IslandLayout[];
   rocks: readonly RockLayout[];
+  props?: readonly PropLayout[];
+}
+
+export interface ArenaLayout extends SceneryLayout {
   playerSpawn: { x: number; y: number; heading: number };
 }
 
@@ -115,7 +135,7 @@ export const ARENA_LAYOUT: ArenaLayout = {
 const ISLAND_EDGE_INSET = 2;
 const ISLAND_CORNER_RADIUS = 56;
 
-export function buildObstacles(layout: ArenaLayout): ObstacleShape[] {
+export function buildObstacles(layout: SceneryLayout): ObstacleShape[] {
   const obstacles: ObstacleShape[] = layout.islands.map((island) => ({
     kind: 'roundedRect',
     x: island.tileX * TILE_SIZE + ISLAND_EDGE_INSET,
@@ -126,6 +146,9 @@ export function buildObstacles(layout: ArenaLayout): ObstacleShape[] {
   }));
   for (const rock of layout.rocks) {
     obstacles.push({ kind: 'circle', x: rock.x, y: rock.y, radius: rock.radius });
+  }
+  for (const prop of layout.props ?? []) {
+    if (prop.radius) obstacles.push({ kind: 'circle', x: prop.x, y: prop.y, radius: prop.radius });
   }
   return obstacles;
 }

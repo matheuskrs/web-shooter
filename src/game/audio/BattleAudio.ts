@@ -87,7 +87,7 @@ export class BattleAudio {
 
   /** Engine noise follows the player's speed. */
   update(world: World): void {
-    const player = world.player;
+    const player = world.requirePlayer();
     const ratio = player.alive && world.phase === 'running' ? player.speed / player.config.movement.maxSpeed : 0;
     this.sailing?.setVolume(ratio * SAILING_MAX_VOLUME);
   }

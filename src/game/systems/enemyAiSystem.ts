@@ -15,7 +15,7 @@ export function updateEnemyAi(world: World, dt: number): void {
   const player = world.player;
   for (const ship of world.ships) {
     if (!ship.alive || ship.team !== 'enemy') continue;
-    if (!player.alive) {
+    if (!player?.alive) {
       ship.controls.throttle = 0;
       ship.controls.turn = 0;
       ship.controls.fire.front = false;
@@ -27,8 +27,8 @@ export function updateEnemyAi(world: World, dt: number): void {
   }
 }
 
-/** Chasers ram: full sail at the player, aiming slightly ahead of where it is going. */
-function steerChaser(ship: Ship, player: Ship): void {
+/** Chasers ram: full sail at the target, aiming slightly ahead of where it is going. */
+export function steerChaser(ship: Ship, player: Ship): void {
   const distance = Math.hypot(player.x - ship.x, player.y - ship.y);
   const lead = Math.min(0.6, distance / Math.max(ship.config.movement.maxSpeed, 1)) * 0.5;
   const targetX = player.x + Math.cos(player.heading) * player.speed * lead;
@@ -44,7 +44,7 @@ function steerChaser(ship: Ship, player: Ship): void {
  * Shooters keep their distance: close in until within range, then hold
  * position and pivot to aim, and back off when the player gets too close.
  */
-function steerShooter(world: World, ship: Ship, player: Ship): void {
+export function steerShooter(world: World, ship: Ship, player: Ship): void {
   const behaviour = world.config.shooter.behaviour;
   const dx = player.x - ship.x;
   const dy = player.y - ship.y;
@@ -69,7 +69,7 @@ function steerShooter(world: World, ship: Ship, player: Ship): void {
     hasLineOfSight(world, ship.x, ship.y, player.x, player.y);
 }
 
-function hasLineOfSight(world: World, ax: number, ay: number, bx: number, by: number): boolean {
+export function hasLineOfSight(world: World, ax: number, ay: number, bx: number, by: number): boolean {
   const length = Math.hypot(bx - ax, by - ay);
   const steps = Math.ceil(length / LOS_STEP);
   for (let i = 1; i < steps; i++) {
@@ -101,7 +101,7 @@ function probe(world: World, ship: Ship, angle: number, distance: number, radius
  * meet an obstacle, commit to turning towards the freer side for a short
  * time so the ship does not flip-flop between left and right.
  */
-function applyObstacleAvoidance(world: World, ship: Ship, dt: number): void {
+export function applyObstacleAvoidance(world: World, ship: Ship, dt: number): void {
   const brain = ship.brain;
   const hull = ship.config.hull;
   const lookAhead = 70 + ship.speed * 0.7;

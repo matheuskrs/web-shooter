@@ -29,7 +29,6 @@ export interface LoaderState {
 }
 
 const TILE_COLUMNS = 16;
-const TEXTURE_WEIGHT = 0.7;
 
 /**
  * Loads and owns the battle's shared textures. Textures are created once per
@@ -71,26 +70,13 @@ export class AssetLoader {
 
   private async loadAll(): Promise<void> {
     this.setState({ status: 'loading', progress: 0, error: null });
-    const soundNames = Object.keys(SOUND_URLS);
-    let soundsDone = 0;
-    let textureProgress = 0;
-    const report = () =>
-      this.setState({
-        ...this.state,
-        progress: textureProgress * TEXTURE_WEIGHT + (soundsDone / Math.max(1, soundNames.length)) * (1 - TEXTURE_WEIGHT),
-      });
-
+    // Sounds are best effort and never block: they keep streaming in after the
+    // textures are ready, so the menu's living sea appears as early as possible.
+    void this.audio.preload(Object.keys(SOUND_URLS), () => undefined);
     try {
-      const [sources] = await Promise.all([
-        Assets.load<Texture>(textureDescriptors(), (progress) => {
-          textureProgress = progress;
-          report();
-        }),
-        this.audio.preload(soundNames, () => {
-          soundsDone++;
-          report();
-        }),
-      ]);
+      const sources = await Assets.load<Texture>(textureDescriptors(), (progress) => {
+        this.setState({ ...this.state, progress });
+      });
       this.loadedTextures ??= await buildTextures(sources);
       this.setState({ status: 'ready', progress: 1, error: null });
     } catch (error) {

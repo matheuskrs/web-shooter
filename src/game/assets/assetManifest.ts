@@ -66,7 +66,8 @@ export type SoundName =
   | 'ui_click'
   | 'ui_close'
   | 'ui_hover'
-  | 'ui_open';
+  | 'ui_open'
+  | 'UI_Click_2';
 
 export const SOUND_URLS: Readonly<Record<string, string>> = Object.fromEntries(
   Object.entries(soundModules).map(([path, url]) => [path.replace(/^.*\/(.+)\.wav$/, '$1'), url]),

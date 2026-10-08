@@ -25,11 +25,11 @@ describe('stepSimulation', () => {
   it('moves the player forward along its heading', () => {
     const world = openSeaWorld();
     const input = new InputState();
-    const { x: startX, y: startY } = world.player;
+    const { x: startX, y: startY } = world.requirePlayer();
     input.press('forward', 'test');
     run(world, input, 1);
-    expect(world.player.x - startX).toBeGreaterThan(150);
-    expect(world.player.y).toBeCloseTo(startY);
+    expect(world.requirePlayer().x - startX).toBeGreaterThan(150);
+    expect(world.requirePlayer().y).toBeCloseTo(startY);
   });
 
   it('keeps the whole hull inside the arena', () => {
@@ -38,7 +38,7 @@ describe('stepSimulation', () => {
     input.press('forward', 'test');
     run(world, input, 10);
     const { radius, circleOffsets } = world.config.player.hull;
-    const bowX = world.player.x + Math.max(...circleOffsets);
+    const bowX = world.requirePlayer().x + Math.max(...circleOffsets);
     expect(bowX + radius).toBeLessThanOrEqual(world.config.arena.width + 1e-6);
   });
 
@@ -51,7 +51,7 @@ describe('stepSimulation', () => {
     input.press('forward', 'test');
     run(world, input, 4);
     const { circleOffsets, radius } = world.config.player.hull;
-    const bowX = world.player.x + Math.max(...circleOffsets) + radius;
+    const bowX = world.requirePlayer().x + Math.max(...circleOffsets) + radius;
     expect(bowX).toBeLessThanOrEqual(1000 + 0.5);
     expect(bowX).toBeGreaterThan(990);
   });
@@ -59,7 +59,7 @@ describe('stepSimulation', () => {
   it('applies a projectile hit once and awards one point per kill', () => {
     const world = openSeaWorld();
     const input = new InputState();
-    const enemy = spawnEnemy(world, 'chaser', world.player.x + 300, world.player.y);
+    const enemy = spawnEnemy(world, 'chaser', world.requirePlayer().x + 300, world.requirePlayer().y);
     let hits = 0;
     const buffer = createFireBuffer();
     input.press('fireFront', 'test');
@@ -107,9 +107,9 @@ describe('stepSimulation', () => {
   it('a chaser ram damages the player and does not score', () => {
     const world = openSeaWorld();
     const input = new InputState();
-    spawnEnemy(world, 'chaser', world.player.x + 200, world.player.y);
+    spawnEnemy(world, 'chaser', world.requirePlayer().x + 200, world.requirePlayer().y);
     run(world, input, 3);
-    expect(world.player.health).toBe(world.config.player.maxHealth - world.config.chaser.ramDamage);
+    expect(world.requirePlayer().health).toBe(world.config.player.maxHealth - world.config.chaser.ramDamage);
     expect(world.score).toBe(0);
     expect(world.ships.filter((ship) => ship.kind === 'chaser')).toHaveLength(0);
   });
@@ -117,12 +117,12 @@ describe('stepSimulation', () => {
   it('a shooter holds its distance and fires once in range', () => {
     const world = openSeaWorld();
     const input = new InputState();
-    const shooter = spawnEnemy(world, 'shooter', world.player.x + 700, world.player.y);
+    const shooter = spawnEnemy(world, 'shooter', world.requirePlayer().x + 700, world.requirePlayer().y);
     run(world, input, 6);
-    const distance = Math.hypot(shooter.x - world.player.x, shooter.y - world.player.y);
+    const distance = Math.hypot(shooter.x - world.requirePlayer().x, shooter.y - world.requirePlayer().y);
     expect(distance).toBeLessThanOrEqual(world.config.shooter.behaviour.attackRange);
     expect(distance).toBeGreaterThan(world.config.shooter.behaviour.minRange);
-    expect(world.player.health).toBeLessThan(world.config.player.maxHealth);
+    expect(world.requirePlayer().health).toBeLessThan(world.config.player.maxHealth);
   });
 
   it('spawns both enemy kinds within the first bag', () => {

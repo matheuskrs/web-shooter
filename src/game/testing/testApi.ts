@@ -1,6 +1,7 @@
 import type { EnemyKind, ShipKind } from '../config/gameConfig';
 import type { GameSession } from '../core/GameSession';
 import { diagnostics } from '../diagnostics/diagnostics';
+import type { Ship } from '../simulation/entities';
 import { spawnEnemy } from '../systems/spawnSystem';
 
 /**
@@ -38,7 +39,7 @@ export interface TestSnapshot {
 }
 
 export interface PirateBattleTestApi {
-  /** True once a battle session is mounted and rendering. */
+  /** True once the PLAY camera has landed and the player is in control. */
   isReady(): boolean;
   getState(): TestSnapshot | null;
   /** Runs the simulation for `seconds` of game time (manual clock only). */
@@ -49,6 +50,15 @@ export interface PirateBattleTestApi {
   setAutoSpawn(enabled: boolean): void;
   /** Total sessions created and disposed since load, for lifecycle checks. */
   lifecycle(): { created: number; disposed: number; live: number };
+  /** The page's shared world: menu fleet size and camera state. */
+  world(): WorldProbe | null;
+}
+
+export interface WorldProbe {
+  attractShips: number;
+  camera: { x: number; y: number; zoom: number };
+  travelling: boolean;
+  activeMatchId: string | null;
 }
 
 declare global {
@@ -58,8 +68,14 @@ declare global {
 }
 
 let current: GameSession | null = null;
+let worldProbe: (() => WorldProbe) | null = null;
 
-function snapshotShip(ship: GameSession['world']['player']): TestShipSnapshot {
+/** The WorldHost registers a read-only probe of itself. */
+export function trackWorld(probe: () => WorldProbe): void {
+  worldProbe = probe;
+}
+
+function snapshotShip(ship: Ship): TestShipSnapshot {
   return {
     id: ship.id,
     kind: ship.kind,
@@ -77,7 +93,7 @@ export const testHooksEnabled = import.meta.env.MODE !== 'production';
 export function installTestApi(): void {
   if (!testHooksEnabled || window.__pirateBattle) return;
   window.__pirateBattle = {
-    isReady: () => !!current && !current.isDisposed && current.pixiApp !== null,
+    isReady: () => !!current && current.isRunning,
     getState: () => {
       if (!current) return null;
       const world = current.world;
@@ -88,12 +104,12 @@ export function installTestApi(): void {
         elapsed: world.elapsed,
         remainingSeconds: world.remainingSeconds,
         steps: world.steps,
-        player: snapshotShip(world.player),
+        player: snapshotShip(world.requirePlayer()),
         enemies: world.ships.filter((ship) => ship.team === 'enemy' && ship.alive).map(snapshotShip),
         projectiles: world.projectiles
           .filter((projectile) => projectile.alive)
           .map(({ id, team, slot, x, y }) => ({ id, team, slot, x, y })),
-        cooldowns: { ...world.player.cooldowns },
+        cooldowns: { ...world.requirePlayer().cooldowns },
         spawnTimer: world.spawner.timer,
         arena: { ...world.config.arena },
         sprites: current.rendererStats,
@@ -103,7 +119,7 @@ export function installTestApi(): void {
     spawnEnemy: (kind, x, y) => (current ? spawnEnemy(current.world, kind, x, y).id : null),
     setPlayerPose: (x, y, heading) => {
       if (!current) return;
-      const player = current.world.player;
+      const player = current.world.requirePlayer();
       player.x = player.prevX = x;
       player.y = player.prevY = y;
       player.heading = player.prevHeading = heading;
@@ -112,6 +128,7 @@ export function installTestApi(): void {
     setAutoSpawn: (enabled) => {
       if (current) current.world.spawner.timer = enabled ? current.world.config.spawn.intervalSeconds : Number.POSITIVE_INFINITY;
     },
+    world: () => worldProbe?.() ?? null,
     lifecycle: () => ({
       created: diagnostics.sessionsCreated,
       disposed: diagnostics.sessionsDisposed,

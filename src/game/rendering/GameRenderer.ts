@@ -1,12 +1,12 @@
 import { Container, Sprite } from 'pixi.js';
-import type { ArenaLayout } from '../arena/arenaLayout';
+import type { SceneryLayout } from '../arena/arenaLayout';
 import type { GameTextures } from '../assets/AssetLoader';
 import { lerp, lerpAngle } from '../math/scalar';
 import { Rng } from '../math/rng';
 import type { Projectile, Ship } from '../simulation/entities';
 import type { GameEvent } from '../simulation/events';
 import type { World } from '../simulation/World';
-import { ArenaView } from './ArenaView';
+import { ArenaView, type AmbientFrame } from './ArenaView';
 import { EffectsLayer } from './EffectsLayer';
 import { GeneratedTextures } from './GeneratedTextures';
 import { ShipView } from './ShipView';
@@ -33,15 +33,27 @@ interface Shake {
   duration: number;
 }
 
+export interface GameRendererOptions {
+  /** Scenery drawn under the ships (islands, rocks, props). */
+  layout: SceneryLayout;
+  seed: number;
+  /** Sea drawn past the world bounds; a multiple of the tile size. */
+  seaMargin: number;
+  /** Darken outside the world bounds (match arenas). */
+  showBoundary: boolean;
+  /** Screen shake on heavy events; off for the menu's background world. */
+  shake: boolean;
+}
+
 /**
- * Draws the world. Views are created lazily the first time an entity id is
+ * Draws one world. Views are created lazily the first time an entity id is
  * seen and destroyed when the entity leaves the world, so the simulation
- * never needs to know the renderer exists. Everything is positioned in
- * logical arena units inside `scene`; only `scene`'s transform changes with
- * the canvas size.
+ * never needs to know the renderer exists. Everything is positioned in world
+ * units inside `stage`; the camera (WorldHost) owns the framing.
  */
 export class GameRenderer {
   readonly stage = new Container();
+  /** Offset by screen shake, in world units. */
   private readonly scene = new Container();
   private readonly arena: ArenaView;
   private readonly shipLayer = new Container();
@@ -55,18 +67,22 @@ export class GameRenderer {
   private readonly wrecks: SinkingWreck[] = [];
   private readonly rng: Rng;
   private readonly shake: Shake = { strength: 0, remaining: 0, duration: 1 };
-  private readonly fit = { scale: 1, offsetX: 0, offsetY: 0 };
+  private readonly shakeEnabled: boolean;
   private readonly seen = new Set<number>();
 
   constructor(
     private readonly world: World,
-    layout: ArenaLayout,
     private readonly textures: GameTextures,
-    seed: number,
+    options: GameRendererOptions,
   ) {
     // Cosmetic randomness gets its own stream so effects can never change gameplay outcomes.
-    this.rng = new Rng(seed ^ 0x9e3779b9);
-    this.arena = new ArenaView(world.config.arena, layout, textures, this.generated);
+    this.rng = new Rng(options.seed ^ 0x9e3779b9);
+    this.shakeEnabled = options.shake;
+    this.arena = new ArenaView(
+      { bounds: world.config.arena, layout: options.layout, seaMargin: options.seaMargin, showBoundary: options.showBoundary },
+      textures,
+      this.generated,
+    );
     this.effects = new EffectsLayer(textures, this.generated, this.rng);
     this.scene.addChild(this.arena.container, this.shipLayer, this.projectileLayer, this.effects.container, this.overlayLayer);
     this.stage.addChild(this.scene);
@@ -81,15 +97,8 @@ export class GameRenderer {
     };
   }
 
-  /** Fits the arena inside the canvas without distortion (letterboxing with open sea). */
-  resize(width: number, height: number): void {
-    const { width: arenaWidth, height: arenaHeight } = this.world.config.arena;
-    const scale = Math.min(width / arenaWidth, height / arenaHeight);
-    this.fit.scale = scale;
-    this.fit.offsetX = (width - arenaWidth * scale) / 2;
-    this.fit.offsetY = (height - arenaHeight * scale) / 2;
-    this.scene.scale.set(scale);
-    this.applySceneOffset(0, 0);
+  setBoundaryAlpha(alpha: number): void {
+    this.arena.setBoundaryAlpha(alpha);
   }
 
   handleEvents(events: readonly GameEvent[]): void {
@@ -149,8 +158,8 @@ export class GameRenderer {
    * @param alpha  interpolation factor between the previous and current step
    * @param dt     cosmetic time to advance (0 while paused)
    */
-  render(alpha: number, dt: number): void {
-    this.arena.update(dt);
+  render(alpha: number, dt: number, ambient: AmbientFrame): void {
+    this.arena.update(ambient);
     this.syncShips(alpha, dt);
     if (this.world.phase === 'running') this.syncProjectiles(alpha);
     this.updateWrecks(dt);
@@ -290,6 +299,7 @@ export class GameRenderer {
   }
 
   private addShake(strength: number, duration: number): void {
+    if (!this.shakeEnabled) return;
     if (strength < this.shake.strength * (this.shake.remaining / this.shake.duration)) return;
     this.shake.strength = strength;
     this.shake.duration = duration;
@@ -301,10 +311,6 @@ export class GameRenderer {
     this.shake.remaining = Math.max(0, this.shake.remaining - dt);
     const falloff = this.shake.remaining / this.shake.duration;
     const amount = this.shake.strength * falloff * falloff;
-    this.applySceneOffset(this.rng.range(-amount, amount), this.rng.range(-amount, amount));
-  }
-
-  private applySceneOffset(dx: number, dy: number): void {
-    this.scene.position.set(this.fit.offsetX + dx * this.fit.scale, this.fit.offsetY + dy * this.fit.scale);
+    this.scene.position.set(this.rng.range(-amount, amount), this.rng.range(-amount, amount));
   }
 }

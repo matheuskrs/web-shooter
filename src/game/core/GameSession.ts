@@ -1,4 +1,4 @@
-import { Application, type Ticker } from 'pixi.js';
+import type { Container } from 'pixi.js';
 import { ARENA_LAYOUT, buildObstacles } from '../arena/arenaLayout';
 import type { GameTextures } from '../assets/AssetLoader';
 import type { AudioManager } from '../audio/AudioManager';
@@ -10,6 +10,7 @@ import { PerfMonitor, type PerfSnapshot } from '../diagnostics/PerfMonitor';
 import type { InputState } from '../input/InputState';
 import { KeyboardInput } from '../input/KeyboardInput';
 import { Rng } from '../math/rng';
+import type { AmbientFrame } from '../rendering/ArenaView';
 import { GameRenderer } from '../rendering/GameRenderer';
 import type { EndReason } from '../simulation/events';
 import { stepSimulation } from '../simulation/stepSimulation';
@@ -19,7 +20,8 @@ import { FixedStepLoop } from './FixedStepLoop';
 
 export const STEP_SECONDS = 1 / 60;
 const MAX_STEPS_PER_FRAME = 5;
-const MAX_RESOLUTION = 2;
+/** Sea drawn around the arena; a tile multiple so it lines up with the menu world's water. */
+const SEA_MARGIN = 19 * 64;
 
 export interface MatchOutcome {
   score: number;
@@ -42,32 +44,45 @@ export interface GameSessionOptions {
   onEnded: (outcome: MatchOutcome) => void;
 }
 
+type SessionState = 'created' | 'running' | 'halted' | 'disposed';
+
 /**
- * Owns one match from mount to teardown: the Pixi application, the world, the
- * fixed-step loop, input bindings and the match's audio voices. React creates
- * a session when the battle screen mounts and disposes it on unmount.
+ * One match: its world, fixed-step loop, input bindings and audio voices,
+ * drawn into `root`. The long-lived WorldHost owns the Pixi application and
+ * the camera; it calls `begin()` when the PLAY camera lands on the arena,
+ * `update()` every frame, and `dispose()` once the camera has left again.
  *
- * `dispose()` is idempotent and safe at any moment, including while the
- * async Pixi initialisation is still running (React Strict Mode mounts,
- * unmounts and remounts effects in development).
+ *   created ──begin()──► running ──halt()──► halted ──dispose()──► disposed
+ *
+ * Before `begin()` the world is drawn but frozen; after `halt()` (leaving
+ * the battle) input, audio and simulation stop at once while the visuals stay
+ * on screen until the camera swaps them out. `dispose()` is idempotent.
  */
 export class GameSession {
   readonly world: World;
+  readonly root: Container;
   private readonly loop: FixedStepLoop;
   private readonly keyboard: KeyboardInput;
   private readonly battleAudio: BattleAudio;
+  private readonly renderer: GameRenderer;
   private readonly fireBuffer = createFireBuffer();
-  private app: Application | null = null;
-  private renderer: GameRenderer | null = null;
-  private resizeObserver: ResizeObserver | null = null;
-  private disposed = false;
+  private readonly perf: PerfMonitor | null;
+  private state: SessionState = 'created';
   private paused = false;
   private endNotified = false;
-  private listenersAttached = false;
-  private readonly perf: PerfMonitor | null;
+  private ambient: AmbientFrame = { time: 0, cameraX: 0, cameraY: 0 };
+  private lastFrameMs = 0;
 
   constructor(private readonly options: GameSessionOptions) {
     this.world = new World(options.config, buildObstacles(ARENA_LAYOUT), new Rng(options.seed), ARENA_LAYOUT.playerSpawn);
+    this.renderer = new GameRenderer(this.world, options.textures, {
+      layout: ARENA_LAYOUT,
+      seed: options.seed,
+      seaMargin: SEA_MARGIN,
+      showBoundary: true,
+      shake: true,
+    });
+    this.root = this.renderer.stage;
     this.loop = new FixedStepLoop({
       stepSeconds: STEP_SECONDS,
       maxStepsPerFrame: MAX_STEPS_PER_FRAME,
@@ -77,11 +92,13 @@ export class GameSession {
     this.keyboard = new KeyboardInput({
       input: options.input,
       onPauseKey: () => this.togglePause(),
-      isActive: () => !this.paused && this.world.phase === 'running',
+      isActive: () => this.state === 'running' && !this.paused && this.world.phase === 'running',
     });
     this.battleAudio = new BattleAudio(options.audio, new Rng(options.seed ^ 0xa5a5a5));
     this.perf = options.profile ? new PerfMonitor() : null;
     diagnostics.sessionsCreated++;
+    this.publishHud();
+    this.renderFrame(0, 0);
   }
 
   get perfSnapshot(): PerfSnapshot | null {
@@ -89,75 +106,78 @@ export class GameSession {
   }
 
   get isDisposed(): boolean {
-    return this.disposed;
+    return this.state === 'disposed';
   }
 
-  get pixiApp(): Application | null {
-    return this.app;
+  /** True once the camera has landed and the player is in control. */
+  get isRunning(): boolean {
+    return this.state === 'running';
   }
 
   get rendererStats() {
-    return this.renderer?.spriteCounts ?? null;
+    return this.state === 'disposed' ? null : this.renderer.spriteCounts;
   }
 
-  async mount(host: HTMLElement): Promise<void> {
-    const app = new Application();
-    await app.init({
-      width: Math.max(1, host.clientWidth),
-      height: Math.max(1, host.clientHeight),
-      resolution: Math.min(window.devicePixelRatio || 1, MAX_RESOLUTION),
-      autoDensity: true,
-      antialias: true,
-      backgroundColor: 0x0b1a2b,
-      preference: 'webgl',
-    });
-    if (this.disposed) {
-      app.destroy(true, { children: true });
-      return;
-    }
-    this.app = app;
-    app.canvas.setAttribute('aria-hidden', 'true');
-    host.appendChild(app.canvas);
+  setBoundaryAlpha(alpha: number): void {
+    if (this.state !== 'disposed') this.renderer.setBoundaryAlpha(alpha);
+  }
 
-    this.renderer = new GameRenderer(this.world, ARENA_LAYOUT, this.options.textures, this.options.seed);
-    app.stage.addChild(this.renderer.stage);
-    this.resizeObserver = new ResizeObserver(() => this.resize(host));
-    this.resizeObserver.observe(host);
-    this.resize(host);
-
+  /** Hands control to the player: input, pause triggers, audio and the clock start now. */
+  begin(): void {
+    if (this.state !== 'created') return;
+    this.state = 'running';
     this.keyboard.attach();
     window.addEventListener('blur', this.handleBlur);
     document.addEventListener('visibilitychange', this.handleVisibility);
-    this.listenersAttached = true;
-    // keydown + keyup + blur + visibilitychange + ticker
-    diagnostics.attachedListeners += 5;
-
-    this.publishHud();
-    this.options.store.update({ phase: 'running' });
+    // keydown + keyup + blur + visibilitychange
+    diagnostics.attachedListeners += 4;
+    this.loop.reset();
     this.battleAudio.start();
-    this.renderFrame(0, 0);
-    if (!this.options.manualClock) app.ticker.add(this.tick);
+    this.options.store.update({ phase: 'running' });
+  }
+
+  /** Called by the host's ticker every frame while this session is on screen. */
+  update(frameSeconds: number, ambient: AmbientFrame): void {
+    this.ambient = ambient;
+    this.lastFrameMs = frameSeconds * 1000;
+    if (this.state === 'disposed' || this.paused) return;
+    if (this.state !== 'running' || this.options.manualClock) {
+      // Frozen world (before begin, after halt, or driven by the test clock):
+      // redraw for the camera without simulating. Under the test clock effects
+      // only advance with `advanceManually`, keeping screenshots deterministic.
+      const cosmeticSeconds = this.state === 'created' && !this.options.manualClock ? frameSeconds : 0;
+      this.renderer.render(0, cosmeticSeconds, ambient);
+      return;
+    }
+    this.loop.advance(frameSeconds);
+    if (this.perf && this.world.phase === 'running') {
+      const stats = this.renderer.spriteCounts;
+      this.perf.recordFrame(this.lastFrameMs, {
+        ships: this.world.ships.length,
+        projectiles: this.world.projectiles.length,
+        effects: stats.effects,
+        wrecks: stats.wrecks,
+      });
+    }
   }
 
   pause(reason: PauseReason): void {
-    if (this.disposed || this.paused || this.world.phase !== 'running') return;
+    if (this.state !== 'running' || this.paused || this.world.phase !== 'running') return;
     this.paused = true;
     // Held keys and fire presses must not survive the pause.
     this.options.input.clear();
     this.loop.reset();
-    this.app?.ticker.stop();
     this.battleAudio.pause();
     this.options.store.update({ phase: 'paused', pauseReason: reason });
   }
 
   resume(): void {
-    if (this.disposed || !this.paused) return;
+    if (this.state !== 'running' || !this.paused) return;
     this.paused = false;
     this.options.input.clear();
     this.loop.reset();
     this.battleAudio.resume();
     this.options.store.update({ phase: 'running', pauseReason: null });
-    this.app?.ticker.start();
   }
 
   togglePause(): void {
@@ -167,44 +187,33 @@ export class GameSession {
 
   /** Test-only manual clock: runs exactly the steps covering `seconds`. */
   advanceManually(seconds: number): void {
-    if (this.disposed || this.paused) return;
+    if (this.state !== 'running' || this.paused) return;
     this.loop.runSteps(Math.round(seconds / STEP_SECONDS));
   }
 
-  dispose(): void {
-    if (this.disposed) return;
-    this.disposed = true;
-    diagnostics.sessionsDisposed++;
-    if (this.listenersAttached) diagnostics.attachedListeners -= 5;
-    this.keyboard.detach();
-    window.removeEventListener('blur', this.handleBlur);
-    document.removeEventListener('visibilitychange', this.handleVisibility);
-    this.resizeObserver?.disconnect();
-    this.resizeObserver = null;
+  /** Leaving the battle: stop everything interactive now, keep the picture until the camera swaps it out. */
+  halt(): void {
+    if (this.state === 'halted' || this.state === 'disposed') return;
+    if (this.state === 'running') {
+      this.keyboard.detach();
+      window.removeEventListener('blur', this.handleBlur);
+      document.removeEventListener('visibilitychange', this.handleVisibility);
+      diagnostics.attachedListeners -= 4;
+    }
+    this.state = 'halted';
+    this.paused = false;
     this.battleAudio.dispose();
     this.options.input.clear();
-    if (this.app) {
-      this.app.ticker.remove(this.tick);
-      this.renderer?.destroy();
-      this.app.destroy(true, { children: true });
-    }
-    this.renderer = null;
-    this.app = null;
   }
 
-  private readonly tick = (ticker: Ticker): void => {
-    if (this.disposed || this.paused) return;
-    this.loop.advance(ticker.deltaMS / 1000);
-    if (this.perf && this.renderer && this.world.phase === 'running') {
-      const stats = this.renderer.spriteCounts;
-      this.perf.recordFrame(ticker.deltaMS, {
-        ships: this.world.ships.length,
-        projectiles: this.world.projectiles.length,
-        effects: stats.effects,
-        wrecks: stats.wrecks,
-      });
-    }
-  };
+  dispose(): void {
+    if (this.state === 'disposed') return;
+    this.halt();
+    this.state = 'disposed';
+    diagnostics.sessionsDisposed++;
+    // Sprites and the session's own generated textures go; shared atlas textures stay.
+    this.renderer.destroy();
+  }
 
   private readonly handleBlur = (): void => this.pause('focus-lost');
 
@@ -212,25 +221,15 @@ export class GameSession {
     if (document.visibilityState === 'hidden') this.pause('focus-lost');
   };
 
-  private resize(host: HTMLElement): void {
-    if (!this.app || !this.renderer) return;
-    const width = Math.max(1, host.clientWidth);
-    const height = Math.max(1, host.clientHeight);
-    this.app.renderer.resize(width, height);
-    this.renderer.resize(width, height);
-  }
-
   private renderFrame(alpha: number, frameSeconds: number): void {
-    const renderer = this.renderer;
-    if (!renderer) return;
     const events = this.world.events;
     if (events.length > 0) {
-      renderer.handleEvents(events);
+      this.renderer.handleEvents(events);
       this.battleAudio.handleEvents(events, this.world);
       events.length = 0;
     }
     this.battleAudio.update(this.world);
-    renderer.render(alpha, frameSeconds);
+    this.renderer.render(alpha, frameSeconds, this.ambient);
     this.publishHud();
     if (this.world.phase === 'ended' && !this.endNotified) {
       this.endNotified = true;
@@ -245,7 +244,7 @@ export class GameSession {
   }
 
   private publishHud(): void {
-    const player = this.world.player;
+    const player = this.world.requirePlayer();
     this.options.store.update({
       health: player.health,
       maxHealth: player.config.maxHealth,

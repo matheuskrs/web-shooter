@@ -12,16 +12,19 @@ export interface SpawnerState {
 }
 
 /**
- * All mutable state of one match. Systems are plain functions that read and
- * write it in a fixed order (see stepSimulation). Nothing here knows about
- * Pixi, React or the DOM.
+ * All mutable state of one simulated sea. Systems are plain functions that
+ * read and write it in a fixed order (see stepSimulation). Nothing here knows
+ * about Pixi, React or the DOM.
+ *
+ * A match world has a player ship; the menu's attract world reuses the same
+ * type and systems without one (`player === null`).
  */
 export class World {
   readonly ships: Ship[] = [];
   readonly projectiles: Projectile[] = [];
   /** Events accumulated since the last drain; consumers read them once per frame. */
   readonly events: GameEvent[] = [];
-  readonly player: Ship;
+  readonly player: Ship | null;
   readonly spawner: SpawnerState;
 
   phase: MatchPhase = 'running';
@@ -37,14 +40,20 @@ export class World {
     readonly config: GameConfig,
     readonly obstacles: readonly ObstacleShape[],
     readonly rng: Rng,
-    playerSpawn: { x: number; y: number; heading: number },
+    playerSpawn: { x: number; y: number; heading: number } | null,
   ) {
-    this.player = this.addShip('player', playerSpawn.x, playerSpawn.y, playerSpawn.heading);
+    this.player = playerSpawn ? this.addShip('player', playerSpawn.x, playerSpawn.y, playerSpawn.heading) : null;
     this.spawner = { timer: config.spawn.firstSpawnDelaySeconds, bag: [] };
   }
 
   get remainingSeconds(): number {
     return Math.max(0, this.config.sessionSeconds - this.elapsed);
+  }
+
+  /** Match-only code calls this: a match world always has its player ship. */
+  requirePlayer(): Ship {
+    if (!this.player) throw new Error('This world has no player ship');
+    return this.player;
   }
 
   allocateId(): number {

@@ -25,7 +25,7 @@ export function createFireBuffer(): FireBuffer {
 }
 
 export function applyPlayerInput(world: World, input: InputState, buffer: FireBuffer, dt: number): void {
-  const player = world.player;
+  const player = world.requirePlayer();
   const controls = player.controls;
   if (!player.alive) {
     controls.throttle = 0;

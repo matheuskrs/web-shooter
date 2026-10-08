@@ -68,10 +68,12 @@ function resolveShipContacts(world: World): void {
       const depth = deepestOverlap(first, second);
       if (depth === null) continue;
 
+      // A chaser explodes against any hull of the opposing team. In a match the
+      // only opposing hull is the player's; the menu's attract world reuses this.
       const chaser = first.kind === 'chaser' ? first : second.kind === 'chaser' ? second : null;
       const other = chaser === first ? second : first;
-      if (chaser && other === world.player) {
-        ram(world, chaser);
+      if (chaser && other.team !== chaser.team) {
+        ram(world, chaser, other);
         continue;
       }
       separate(first, second, depth);
@@ -79,11 +81,11 @@ function resolveShipContacts(world: World): void {
   }
 }
 
-function ram(world: World, chaser: Ship): void {
+function ram(world: World, chaser: Ship, victim: Ship): void {
   world.emit({ type: 'chaserRammed', x: chaser.x, y: chaser.y });
   // The chaser explodes on impact: no point is awarded for a self-destruction.
-  destroyShip(world, chaser, { cause: 'ram', team: 'enemy' });
-  damageShip(world, world.player, world.config.chaser.ramDamage, { cause: 'ram', team: 'enemy' });
+  destroyShip(world, chaser, { cause: 'ram', team: chaser.team });
+  damageShip(world, victim, world.config.chaser.ramDamage, { cause: 'ram', team: chaser.team });
 }
 
 interface Overlap {

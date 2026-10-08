@@ -27,7 +27,8 @@ export function updateSpawner(world: World, dt: number): void {
 }
 
 export function spawnEnemy(world: World, kind: EnemyKind, x: number, y: number) {
-  const heading = Math.atan2(world.player.y - y, world.player.x - x);
+  const player = world.requirePlayer();
+  const heading = Math.atan2(player.y - y, player.x - x);
   const ship = world.addShip(kind, x, y, heading);
   world.emit({ type: 'enemySpawned', shipId: ship.id, kind, x, y });
   return ship;
@@ -56,7 +57,7 @@ function drawKind(world: World): EnemyKind {
 function findSpawnPoint(world: World): { x: number; y: number } | null {
   const { width, height } = world.config.arena;
   const { minDistanceFromPlayer, clearance } = world.config.spawn;
-  const player = world.player;
+  const player = world.requirePlayer();
 
   for (let attempt = 0; attempt < SPAWN_ATTEMPTS; attempt++) {
     const edge = world.rng.int(0, 4);

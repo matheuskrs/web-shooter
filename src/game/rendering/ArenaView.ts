@@ -1,13 +1,32 @@
 import { Container, Graphics, Sprite, TilingSprite } from 'pixi.js';
-import { TILE, TILE_SIZE, type ArenaLayout, type IslandLayout } from '../arena/arenaLayout';
-import type { ArenaConfig } from '../config/gameConfig';
+import { TILE, TILE_SIZE, type IslandLayout, type SceneryLayout } from '../arena/arenaLayout';
 import type { GameTextures } from '../assets/AssetLoader';
 import type { GeneratedTextures } from './GeneratedTextures';
 
-/** Water extends this far past the arena so letterbox space shows sea, not a flat colour. */
-const SEA_MARGIN = 1200;
 const OUTSIDE_TINT = 0x0b1a2b;
 const OUTSIDE_ALPHA = 0.5;
+/** The shimmer layer trails the camera slightly, a cheap hint of depth while travelling. */
+const SHIMMER_PARALLAX = 0.12;
+
+/** Per-frame values shared by every scene, so water and parallax stay continuous across scene swaps. */
+export interface AmbientFrame {
+  /** Seconds of ambient (water) time; shared by all scenes. */
+  time: number;
+  cameraX: number;
+  cameraY: number;
+}
+
+export interface ArenaViewOptions {
+  bounds: { width: number; height: number };
+  layout: SceneryLayout;
+  /**
+   * How far the sea extends past `bounds`. Kept a multiple of the tile size
+   * so the water of different scenes lines up when the camera swaps them.
+   */
+  seaMargin: number;
+  /** Darken the sea outside `bounds`: the edge of a match arena. */
+  showBoundary: boolean;
+}
 
 /**
  * Static scenery built from the official tiles. Only the two water layers
@@ -17,20 +36,16 @@ export class ArenaView {
   readonly container = new Container();
   private readonly water: TilingSprite;
   private readonly shimmer: TilingSprite;
-  private time = 0;
+  private readonly boundary: Graphics | null;
 
-  constructor(
-    arena: ArenaConfig,
-    layout: ArenaLayout,
-    textures: GameTextures,
-    generated: GeneratedTextures,
-  ) {
+  constructor(options: ArenaViewOptions, textures: GameTextures, generated: GeneratedTextures) {
+    const { bounds, layout, seaMargin } = options;
     const waterTexture = textures.tile(TILE.water);
-    const seaSize = { width: arena.width + SEA_MARGIN * 2, height: arena.height + SEA_MARGIN * 2 };
+    const seaSize = { width: bounds.width + seaMargin * 2, height: bounds.height + seaMargin * 2 };
     this.water = new TilingSprite({ texture: waterTexture, ...seaSize });
-    this.water.position.set(-SEA_MARGIN, -SEA_MARGIN);
+    this.water.position.set(-seaMargin, -seaMargin);
     this.shimmer = new TilingSprite({ texture: waterTexture, ...seaSize });
-    this.shimmer.position.set(-SEA_MARGIN, -SEA_MARGIN);
+    this.shimmer.position.set(-seaMargin, -seaMargin);
     this.shimmer.tileScale.set(1.7);
     this.shimmer.alpha = 0.16;
     this.container.addChild(this.water, this.shimmer);
@@ -51,13 +66,30 @@ export class ArenaView {
       sprite.position.set(rock.x, rock.y);
       this.container.addChild(foam, sprite);
     }
-    this.container.addChild(buildOutsideShade(arena));
+    for (const prop of layout.props ?? []) {
+      const texture = prop.frame ? textures.ships[prop.frame] : prop.tile !== undefined ? textures.tile(prop.tile) : undefined;
+      if (!texture) continue;
+      const sprite = new Sprite({ texture, anchor: 0.5 });
+      sprite.position.set(prop.x, prop.y);
+      sprite.rotation = prop.rotation ?? 0;
+      sprite.scale.set(prop.scale ?? 1);
+      sprite.alpha = prop.alpha ?? 1;
+      this.container.addChild(sprite);
+    }
+
+    this.boundary = options.showBoundary ? buildOutsideShade(bounds, seaMargin) : null;
+    if (this.boundary) this.container.addChild(this.boundary);
   }
 
-  update(dt: number): void {
-    this.time += dt;
-    this.water.tilePosition.set(this.time * 6, this.time * 3);
-    this.shimmer.tilePosition.set(-this.time * 9, this.time * 5);
+  update(ambient: AmbientFrame): void {
+    const t = ambient.time;
+    this.water.tilePosition.set(t * 6, t * 3);
+    this.shimmer.tilePosition.set(-t * 9 + ambient.cameraX * SHIMMER_PARALLAX, t * 5 + ambient.cameraY * SHIMMER_PARALLAX);
+  }
+
+  /** Fades the arena edge in after the camera arrives from the open sea. */
+  setBoundaryAlpha(alpha: number): void {
+    if (this.boundary) this.boundary.alpha = alpha;
   }
 }
 
@@ -94,12 +126,10 @@ function buildIsland(island: IslandLayout, textures: GameTextures): Container {
 
   for (let row = 0; row < island.tilesHigh; row++) {
     for (let col = 0; col < island.tilesWide; col++) {
-      let id: number;
-      if (island.style === 'grass') {
-        id = TILE.grassIsland[row]?.[col] ?? TILE.sand.center;
-      } else {
-        id = nineSlice(TILE.sand, col, row, island.tilesWide, island.tilesHigh);
-      }
+      const id =
+        island.style === 'grass'
+          ? (TILE.grassIsland[row]?.[col] ?? TILE.sand.center)
+          : nineSlice(TILE.sand, col, row, island.tilesWide, island.tilesHigh);
       placeTile(container, textures, id, originX + col * TILE_SIZE, originY + row * TILE_SIZE);
     }
   }
@@ -115,14 +145,14 @@ function buildIsland(island: IslandLayout, textures: GameTextures): Container {
 }
 
 /** Darkens the sea outside the playable rectangle so the boundary reads clearly. */
-function buildOutsideShade(arena: ArenaConfig): Graphics {
-  const m = SEA_MARGIN;
+function buildOutsideShade(bounds: { width: number; height: number }, margin: number): Graphics {
+  const { width, height } = bounds;
   return new Graphics()
-    .rect(-m, -m, arena.width + m * 2, m)
-    .rect(-m, arena.height, arena.width + m * 2, m)
-    .rect(-m, 0, m, arena.height)
-    .rect(arena.width, 0, m, arena.height)
+    .rect(-margin, -margin, width + margin * 2, margin)
+    .rect(-margin, height, width + margin * 2, margin)
+    .rect(-margin, 0, margin, height)
+    .rect(width, 0, margin, height)
     .fill({ color: OUTSIDE_TINT, alpha: OUTSIDE_ALPHA })
-    .rect(0, 0, arena.width, arena.height)
+    .rect(0, 0, width, height)
     .stroke({ color: 0xffffff, alpha: 0.18, width: 3, alignment: 1 });
 }
