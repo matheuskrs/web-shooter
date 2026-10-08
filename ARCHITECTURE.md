@@ -28,15 +28,28 @@ The session talks back through two narrow channels:
 
 Input travels the other way through `InputState`. Touch buttons call `input.press/release` directly, which causes no React state updates during play beyond the pressed-button visual.
 
+## World host, camera and the living menu
+
+`src/game/world/WorldHost.ts` owns the page's **single** Pixi `Application`, created once and kept for the page's lifetime. Its single ticker callback drives the camera and whatever is on screen. React mounts it through `WorldCanvas`, which only attaches and detaches the canvas, so Strict Mode's double mount is harmless.
+
+- **One continuous sea.** The menu world (`attractLayout.ts`) is a larger sea that contains the match arena's islands at `ARENA_ORIGIN`. Each screen is a viewpoint in it (`LOCATIONS`): harbour (menu), lagoon (options), docks (Ranking and Match History share this one, so switching tabs does not move the camera) and the arena. All scenery sits on the 64 px tile grid, so the menu world's water and a match's water line up exactly.
+- **Attract mode** (`AttractScene.ts`, `attractAiSystem.ts`): two small fleets fight with the *real* movement, collision, weapon, projectile and damage systems and the real renderer. The world has no player (`World.player === null`), no clock, no spawner and no score that anyone reads, so it can never create a match, a record or a pending upload. Ships that drift off screen are recycled near the camera's focus.
+- **CameraDirector** (`CameraDirector.ts`) is a pose (`x`, `y`, `zoom`) plus a queue of travel legs. A leg uses a smootherstep curve (velocity rises and falls like a bell) and dips the zoom with `sin(pi * t)`: zoom out, travel, zoom in. At rest the camera drifts slowly towards the top-left. The camera reports its screen velocity; above 300 px/s a `MotionBlurFilter` (pixi-filters) is attached to the screen-space viewport along that direction, and it is detached otherwise, so idle frames pay nothing.
+- **Screens are placed in the world.** `AnchoredScreen` registers its DOM layer with the host, which writes `translate(...) scale(...)` from the camera every frame (a direct style write, so no React render). During travel the screen being left shrinks away while the destination grows into view, both moving with the sea. Panels ignore the idle drift (they float above the water), and the drift is faded out over the first leg so they never jump.
+- **PLAY** flies to the player's spawn, swaps the attract world for the new match world at the leg's midpoint (under the strongest blur), closes in on the ship, and settles into the 1600 x 900 arena framing. Only then does `GameSession.begin()` attach input and start the clock. The arena rules, bounds and collisions are untouched; the larger sea is purely an illusion around them.
+- **Reduced motion and tests:** with `prefers-reduced-motion` the camera cuts instead of travelling and there is no blur or drift. With `?clock=manual` the menu world is frozen as well, which keeps screenshots deterministic.
+
 ## GameSession lifecycle
 
-`src/game/core/GameSession.ts` owns one match: the Pixi `Application`, the `World`, the fixed-step loop, keyboard/blur/visibility listeners, a `ResizeObserver`, the renderer and the match's audio loops.
+`src/game/core/GameSession.ts` owns one match: its `World`, the fixed-step loop, keyboard/blur/visibility listeners, the renderer (drawn into a container inside the host's world) and the match's audio loops.
 
-- `mount(host)` awaits `app.init()`. If `dispose()` ran meanwhile (React Strict Mode mounts, unmounts and remounts effects in development), the freshly created application is destroyed immediately and nothing is attached.
-- `dispose()` is idempotent. It detaches every listener, removes the ticker callback, stops audio loops, destroys all sprites (`destroy({ children: true })`, never the shared textures) and destroys the application, which also releases its WebGL context.
-- A fresh `Application` per match keeps ownership simple ("everything a match created dies with it") at the cost of about 100 ms of setup on Play. Textures are loaded once per page and re-uploaded to the new context.
+`created -> begin() -> running -> halt() -> halted -> dispose()`
 
-`src/game/diagnostics` counts sessions created and disposed and the listeners currently attached. The E2E suite asserts `live === 0` after repeated start → leave cycles, and `?perf` shows the same counters live. In development Strict Mode, five cycles produce 10 created / 10 disposed / 0 live.
+- Before `begin()` the arena is drawn but frozen, so the camera can fly in over it.
+- `halt()` runs the moment the player leaves the battle: input, pause triggers, audio and the simulation stop immediately, while the picture stays until the camera has flown away.
+- `dispose()` is idempotent. It destroys every sprite and the session's own generated textures, never the shared atlas textures.
+
+`src/game/diagnostics` counts sessions created and disposed and the listeners currently attached. The E2E suite asserts `live === 0` after repeated start -> leave cycles, and that exactly one canvas exists.
 
 ## Fixed timestep
 
@@ -91,7 +104,7 @@ A projectile is retired (`alive = false`) in the same call that applies its dama
 - **Ships:** the official sprites, which come in four damage stages (intact, damaged, critical, grey wreck). The sprite changes at 2/3 and 1/3 health; flames from the effects art appear on deck and stay upright on screen. Hits flash the hull and kick it back; firing recoils it away from the firing side. Kinds are told apart by the art itself: player red, Shooter yellow, Chaser black and smaller. The luminance difference keeps them distinguishable for red/green colour blindness.
 - **Health bars:** the official enemy health frame and fill art, in a non-rotating overlay layer. The fill is clipped from the left exactly as the atlas metadata prescribes (`fill_rect`, `clip_axis: x`), by giving the sprite a narrower frame of the same texture, so the rounded end caps are never squashed.
 - **Effects:** a single data-driven particle list in `EffectsLayer`, with one recipe per moment: a muzzle flash and smoke per cannon, splinters, a ripple and glow splash, a layered explosion with debris and crew overboard, and spawn ripples. Destroyed ships become grey wrecks that fade and sink over 1.8 s.
-- **Resize:** the arena is 1600 × 900 logical units, and `scene.scale = min(width / 1600, height / 900)` is centred. The renderer resolution is `min(devicePixelRatio, 2)` with `autoDensity`, so simulation coordinates never depend on CSS pixels or DPR. Touch input uses buttons, so no pointer-to-world mapping is required.
+- **Resize:** the camera frames 1600 × 900 world units at zoom 1 (`min(width / 1600, height / 900)`), centred on its pose; in battle the pose is the arena centre, so the arena fits the screen exactly. The renderer resolution is `min(devicePixelRatio, 2)` with `autoDensity`, so simulation coordinates never depend on CSS pixels or DPR. Touch input uses buttons, so no pointer-to-world mapping is required.
 
 ## Assets
 
@@ -179,4 +192,5 @@ The values live in `BASE_GAME_CONFIG`; `RULESET_VERSION` is bumped whenever they
 - There is no swept collision. It is safe at the configured speeds (see above), but much faster projectiles would need it.
 - Audio is uncompressed WAV from the pack, about 6 MB, loaded with the battle. Converting it to compressed formats would cut load time.
 - Visual baselines are recorded on Windows and need re-recording on other platforms.
+- The menu sea keeps simulating up to six ships while a menu is open; its cost has not been profiled yet.
 - Profiling numbers must be collected on the reference machine; see [docs/performance.md](docs/performance.md).
