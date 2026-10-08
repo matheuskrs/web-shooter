@@ -27,7 +27,7 @@ export function MainMenuScreen({ onPlay, onNavigate }: MainMenuScreenProps) {
           <img src={titleUrl} srcSet={`${titleUrl} 1x, ${titleUrl2x} 2x`} alt="Pirate Battle" width={384} height={128} />
         </h1>
         <div className="menu-panel__actions">
-          <GameButton autoFocus onClick={onPlay}>
+          <GameButton onClick={onPlay}>
             Play
           </GameButton>
           <GameButton onClick={() => onNavigate('options')}>Options</GameButton>

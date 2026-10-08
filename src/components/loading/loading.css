@@ -1,0 +1,110 @@
+/*
+ * Wood-brown curtain over everything while the battle textures load.
+ * The text uses the same amber as the result score, with its deep-brass edge.
+ */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background:
+    repeating-linear-gradient(176deg, rgba(0, 0, 0, 0) 0 22px, rgba(40, 18, 4, 0.12) 22px 24px, rgba(0, 0, 0, 0) 24px 61px),
+    radial-gradient(ellipse at center, #8a5228 0%, #6e3e1c 55%, #4a2810 100%);
+  transition: opacity 0.35s ease-out;
+}
+
+.loading-screen--done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-screen__word {
+  display: flex;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 9vw, 4.5rem);
+  letter-spacing: 0.04em;
+  color: var(--brass);
+  text-shadow:
+    0 4px 0 var(--brass-deep),
+    0 10px 18px rgba(0, 0, 0, 0.45);
+}
+
+.loading-screen__word span {
+  display: inline-block;
+  animation: loading-wave 1.2s ease-in-out calc(var(--i) * 0.09s) infinite;
+}
+
+@keyframes loading-wave {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-0.28em);
+  }
+}
+
+/* "." → ".." → "...": the first dot is always there, the others join a third of a cycle apart. */
+.loading-screen__word .loading-screen__dot--2 {
+  animation:
+    loading-wave 1.2s ease-in-out calc(var(--i) * 0.09s) infinite,
+    loading-dot-2 1.5s linear infinite;
+}
+
+.loading-screen__word .loading-screen__dot--3 {
+  animation:
+    loading-wave 1.2s ease-in-out calc(var(--i) * 0.09s) infinite,
+    loading-dot-3 1.5s linear infinite;
+}
+
+@keyframes loading-dot-2 {
+  0%,
+  33.2% {
+    opacity: 0;
+  }
+  33.3%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes loading-dot-3 {
+  0%,
+  66.5% {
+    opacity: 0;
+  }
+  66.6%,
+  100% {
+    opacity: 1;
+  }
+}
+
+.loading-screen__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 420px;
+  text-align: center;
+  font-weight: 700;
+  color: #f8ecd2;
+}
+
+/* Reduced motion: no wave, the dots still count up (they appear rather than move). */
+@media (prefers-reduced-motion: reduce) {
+  .loading-screen__word span {
+    animation: none !important;
+  }
+
+  .loading-screen__word .loading-screen__dot--2 {
+    animation: loading-dot-2 1.5s linear infinite !important;
+  }
+
+  .loading-screen__word .loading-screen__dot--3 {
+    animation: loading-dot-3 1.5s linear infinite !important;
+  }
+}

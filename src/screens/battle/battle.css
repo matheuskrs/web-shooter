@@ -254,43 +254,6 @@
   gap: 6px;
 }
 
-/* ---------- Loading ---------- */
-.loading {
-  pointer-events: auto;
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 28px;
-  padding: 16px;
-  background:
-    linear-gradient(rgba(8, 19, 31, 0.6), rgba(8, 19, 31, 0.8)),
-    url('../../../assets/ui_scene_background.png') center / cover no-repeat;
-  text-align: center;
-}
-
-.loading__title {
-  width: min(384px, 80vw);
-  height: auto;
-}
-
-.loading__bar {
-  --s: 1.1;
-}
-
-.loading__error {
-  max-width: 420px;
-}
-
-.loading__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-}
-
 /* ---------- Portrait hint ---------- */
 .rotate-hint {
   pointer-events: auto;

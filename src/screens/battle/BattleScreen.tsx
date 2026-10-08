@@ -1,5 +1,4 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import { useServices } from '../../app/services';
 import { Dialog } from '../../components/Dialog';
 import { GameButton } from '../../components/GameButton';
 import { perfModeEnabled } from '../../game/diagnostics/diagnostics';
@@ -7,7 +6,6 @@ import type { MatchRuntime } from '../../game/world/WorldHost';
 import { useMediaQuery, useTouchControlsWanted } from '../../hooks/useMediaQuery';
 import { BattleAnnouncer } from './BattleAnnouncer';
 import { BattleHud } from './BattleHud';
-import { LoadingOverlay } from './LoadingOverlay';
 import { PerfOverlay } from './PerfOverlay';
 import { TouchControls } from './TouchControls';
 import './battle.css';
@@ -32,16 +30,8 @@ const rotateShip = new URL('../../../assets/png/default/ships/ship_3.png', impor
  * canvas underneath; nothing here renders per frame.
  */
 export function BattleScreen({ runtime, manualClock, onFinished, onRestart, onQuit }: BattleScreenProps) {
-  const { assets } = useServices();
-  const loader = useSyncExternalStore(assets.subscribe, assets.getState);
-
-  if (!runtime) {
-    return loader.status === 'ready' ? null : (
-      <main className="battle" aria-label="Battle">
-        <LoadingOverlay state={loader} onRetry={() => void assets.load()} onQuit={onQuit} />
-      </main>
-    );
-  }
+  // Assets are loaded behind the app-wide loading screen; until the match exists there is nothing to overlay.
+  if (!runtime) return null;
   return (
     <BattleOverlay
       key={runtime.matchId}

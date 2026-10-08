@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import { useSubmitMatch } from '../api/queries';
 import { PirateToaster } from '../components/toast/PirateToaster';
 import { AnchoredScreen } from '../components/AnchoredScreen';
+import { LoadingScreen } from '../components/loading/LoadingScreen';
 import { WorldCanvas } from '../components/WorldCanvas';
 import type { MatchOutcome } from '../game/core/GameSession';
 import { readTestOverrides } from '../game/testing/testApi';
@@ -45,6 +46,8 @@ export function App() {
   const runtime = useSyncExternalStore(world.subscribe, world.getRuntime);
   const preferences = useStoredValue(preferencesStore);
   const [match, setMatch] = useState<MatchSetup | null>(null);
+  // Hot reloads can find the textures already loaded; then there is nothing to wait for.
+  const [loadingGone, setLoadingGone] = useState(() => assets.getState().status === 'ready');
   const submitMatch = useSubmitMatch();
   const recovered = useRef(false);
 
@@ -162,7 +165,8 @@ export function App() {
       )}
       {isAnchored(route) && (
         // Keyed by visit: every arrival starts fresh (unsaved Options are discarded, focus lands on the first control).
-        <AnchoredScreen key={`${route}-${visit}`} location={LOCATION_OF[route]} active>
+        // Inert under the loading screen, so keyboard focus cannot reach a hidden menu.
+        <AnchoredScreen key={`${route}-${visit}`} location={LOCATION_OF[route]} active={loader.status === 'ready'}>
           {renderScreen(route)}
         </AnchoredScreen>
       )}
@@ -173,6 +177,14 @@ export function App() {
           onFinished={showResult}
           onRestart={startBattle}
           onQuit={quitToMenu}
+        />
+      )}
+      {!loadingGone && (
+        <LoadingScreen
+          state={loader}
+          done={loader.status === 'ready'}
+          onRetry={() => void assets.load()}
+          onGone={() => setLoadingGone(true)}
         />
       )}
       <PirateToaster />

@@ -7,31 +7,31 @@ import { openApp, openLog, state, toast } from './support';
 test.use({ serviceWorkers: 'block' });
 
 test.describe('Asset loading', () => {
-  test('shows progress, reports a failure and recovers on retry', async ({ page }) => {
+  test('a texture failure shows Retry on the loading screen and recovers', async ({ page }) => {
     let failShips = true;
     await page.route('**/ships_miscellaneous_sheet*.png', (route) => (failShips ? route.abort('failed') : route.continue()));
 
-    await openApp(page);
-    await page.getByRole('button', { name: 'Play', exact: true }).click();
-
+    await page.goto('/?clock=manual');
     await expect(page.getByRole('alert')).toContainText('could not be loaded');
-    expect(await page.evaluate(() => window.__pirateBattle?.isReady() ?? false)).toBe(false);
+    await expect(page.getByRole('button', { name: 'Play', exact: true })).toHaveCount(0);
 
     failShips = false;
     await page.getByRole('button', { name: 'Retry' }).click();
+    await page.getByRole('button', { name: 'Play', exact: true }).click();
     await page.waitForFunction(() => window.__pirateBattle?.isReady() === true);
     expect((await state(page)).phase).toBe('running');
   });
 
-  test('displays a progress bar while the battle assets load', async ({ page }) => {
+  test('shows the loading screen until the textures are ready', async ({ page }) => {
     await page.route('**/tiles_sheet_retina*.png', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 800));
       await route.continue();
     });
-    await openApp(page);
-    await page.getByRole('button', { name: 'Play', exact: true }).click();
-    await expect(page.getByRole('progressbar', { name: 'Loading battle' })).toBeVisible();
-    await page.waitForFunction(() => window.__pirateBattle?.isReady() === true);
+    await page.goto('/?clock=manual');
+    const loading = page.getByRole('progressbar', { name: 'Loading' });
+    await expect(loading).toBeVisible();
+    await expect(loading).toContainText('Loading...');
+    await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
     await expect(page.getByRole('progressbar')).toHaveCount(0);
   });
 

@@ -80,7 +80,7 @@ export function ResultScreen({ onPlayAgain, onMenu }: { onPlayAgain: () => void;
           </div>
 
           <div className="result-panel__actions">
-            <GameButton autoFocus onClick={onPlayAgain}>
+            <GameButton onClick={onPlayAgain}>
               Play Again
             </GameButton>
             <GameButton variant="secondary" onClick={onMenu}>
