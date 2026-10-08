@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { advance, openApp, saveOptions, setAutoSpawn, spawnEnemy, startBattle, state } from './support';
+import { advance, chooseScenario, openApp, openLog, saveOptions, setAutoSpawn, spawnEnemy, startBattle, state, toast } from './support';
 
 async function playShortMatch(page: Page, { kills = 0 } = {}) {
   await saveOptions(page, { session: '60' });
@@ -17,14 +17,7 @@ async function playShortMatch(page: Page, { kills = 0 } = {}) {
   await expect(page.getByRole('heading', { name: 'Battle Complete' })).toBeVisible();
 }
 
-async function useScenario(page: Page, scenario: string) {
-  await page.getByRole('button', { name: 'Options' }).click();
-  await page.getByText('Network simulation').click();
-  await page.getByLabel('Mock API scenario').selectOption(scenario);
-  await page.getByRole('button', { name: 'Main Menu' }).click();
-}
-
-const historyRows = (page: Page) => page.getByRole('tabpanel').locator('tbody tr');
+const historyRows = (page: Page) => page.getByRole('tabpanel').locator('tbody tr:not(.log-table__skeleton)');
 
 /** Counts this player's entries across every ranking page, straight from the (mocked) API. */
 async function myRankingEntries(page: Page): Promise<number> {
@@ -51,6 +44,7 @@ test.describe('Match registration', () => {
 
     expect(await myRankingEntries(page)).toBe(1);
     await page.getByRole('button', { name: 'Main Menu' }).click();
+    await openLog(page, 'Ranking');
     // The ranking compares only 60 s matches with the same spawn time: fixtures + ours.
     await expect(page.locator('caption')).toContainText('60 second battles');
     await showLastRankingPage(page);
@@ -67,6 +61,7 @@ test.describe('Match registration', () => {
     await openApp(page, { scenario: 'register-unavailable' });
     await playShortMatch(page);
     await expect(page.getByText('Not logged yet.', { exact: false })).toBeVisible({ timeout: 10_000 });
+    await expect(toast(page, "Match result couldn't be submitted.")).toBeVisible();
 
     // A pending upload never blocks the next battle.
     await page.getByRole('button', { name: 'Main Menu' }).click();
@@ -75,10 +70,10 @@ test.describe('Match registration', () => {
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Main Menu' }).click();
 
-    await useScenario(page, 'success');
+    await chooseScenario(page, 'Success');
     await page.goto('/?clock=manual');
     await expect(page.getByText('battle waiting to be logged')).toBeHidden({ timeout: 10_000 });
-    await page.getByRole('tab', { name: 'Match History' }).click();
+    await openLog(page, 'Match History');
     await expect(historyRows(page)).toHaveCount(1);
   });
 
@@ -101,7 +96,7 @@ test.describe('Match registration', () => {
     });
 
     await page.getByRole('button', { name: 'Main Menu' }).click();
-    await page.getByRole('tab', { name: 'Match History' }).click();
+    await openLog(page, 'Match History');
     await expect(historyRows(page)).toHaveCount(1);
     expect(await myRankingEntries(page)).toBe(1);
   });
@@ -109,6 +104,7 @@ test.describe('Match registration', () => {
   test('delayed responses never overwrite newer data', async ({ page }) => {
     // Odd requests answer after 2.2 s, even ones after 0.25 s.
     await openApp(page, { scenario: 'out-of-order' });
+    await openLog(page, 'Ranking');
     const panel = page.getByRole('tabpanel');
     await expect(panel.getByText('Page 1 of 12')).toBeVisible({ timeout: 6_000 });
 

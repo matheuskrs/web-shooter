@@ -4,7 +4,8 @@ import { advance, openApp, saveOptions, setAutoSpawn, setPlayerPose, spawnEnemy,
 test.describe('Visual regression', () => {
   test('main menu', async ({ page }) => {
     await openApp(page);
-    await expect(page.getByRole('tabpanel').locator('tbody tr')).toHaveCount(5);
+    // The frozen menu world (test clock) must be built before the screenshot.
+    await expect.poll(() => page.evaluate(() => window.__pirateBattle?.world()?.attractShips ?? 0), { timeout: 20_000 }).toBeGreaterThan(0);
     await page.evaluate(() => document.fonts.ready);
     await expect(page).toHaveScreenshot('menu.png', { fullPage: true });
   });

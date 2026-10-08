@@ -36,7 +36,7 @@ export default defineConfig({
     {
       name: 'mobile-chromium',
       use: { ...devices['Pixel 7 landscape'] },
-      testMatch: /(navigation|touch|options|captains-log|match-flow|visual)\.spec\.ts/,
+      testMatch: /(navigation|touch|options|captains-log|match-flow|visual|world)\.spec\.ts/,
     },
   ],
   webServer: {

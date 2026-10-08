@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { advance, openApp, saveOptions, setAutoSpawn, startBattle } from './support';
+import { advance, lifecycle, openApp, openLog, saveOptions, setAutoSpawn, startBattle } from './support';
 
 async function finishShortMatch(page: Page) {
   await saveOptions(page, { session: '60' });
@@ -28,7 +28,7 @@ test.describe('Result and navigation', () => {
     await advance(page, 5);
     await page.reload();
     await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
-    await page.getByRole('tab', { name: 'Match History' }).click();
+    await openLog(page, 'Match History');
     await expect(page.getByText('No battles yet.')).toBeVisible();
   });
 
@@ -38,10 +38,9 @@ test.describe('Result and navigation', () => {
     await advance(page, 3);
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Main Menu' }).click();
-    await page.getByRole('tab', { name: 'Match History' }).click();
+    await openLog(page, 'Match History');
     await expect(page.getByText('No battles yet.')).toBeVisible();
-    const lifecycle = await page.evaluate(() => window.__pirateBattle!.lifecycle());
-    expect(lifecycle).toEqual({ created: 1, disposed: 1, live: 0 });
+    expect(await lifecycle(page)).toEqual({ created: 1, disposed: 1, live: 0 });
   });
 
   test('repeated navigation between screens leaves no battle running', async ({ page }) => {
@@ -53,9 +52,10 @@ test.describe('Result and navigation', () => {
       await advance(page, 1);
       await page.goBack();
       await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
-      await expect(page.locator('canvas')).toHaveCount(0);
+      await expect.poll(async () => (await lifecycle(page)).live).toBe(0);
     }
-    const lifecycle = await page.evaluate(() => window.__pirateBattle!.lifecycle());
-    expect(lifecycle).toEqual({ created: 3, disposed: 3, live: 0 });
+    // One persistent world canvas; every match session was created and disposed.
+    await expect(page.locator('canvas')).toHaveCount(1);
+    expect(await lifecycle(page)).toEqual({ created: 3, disposed: 3, live: 0 });
   });
 });

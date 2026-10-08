@@ -72,3 +72,27 @@ export async function saveOptions(page: Page, values: { session?: string; spawn?
   await expect(page.getByText('Saved.')).toBeVisible();
   await page.getByRole('button', { name: 'Main Menu' }).click();
 }
+
+/** From the main menu, open the Captain's Log on one of its tabs. */
+export async function openLog(page: Page, tab: 'Ranking' | 'Match History') {
+  await page.getByRole('button', { name: tab, exact: true }).click();
+  await expect(page.getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true');
+}
+
+/** Picks a mock API scenario through the Options screen (an Ant Design Select). */
+export async function chooseScenario(page: Page, label: string) {
+  await page.getByRole('button', { name: 'Options' }).click();
+  await page.getByText('Network simulation').click();
+  await page.getByLabel('Mock API scenario').click();
+  await page.locator('.ant-select-item-option').filter({ hasText: new RegExp(`^${label}$`) }).click();
+  await page.getByRole('button', { name: 'Main Menu' }).click();
+}
+
+/** The bottom-centre toast with this text. */
+export function toast(page: Page, text: string) {
+  return page.locator('.pirate-toast').filter({ hasText: text });
+}
+
+export async function lifecycle(page: Page) {
+  return page.evaluate(() => window.__pirateBattle!.lifecycle());
+}
