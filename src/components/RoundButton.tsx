@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes } from 'react';
 import { useServices } from '../app/services';
+import { useUiClick } from '../hooks/useUiClick';
 import { Icon } from './Icon';
 import type { IconName } from './icons';
 
@@ -13,6 +14,7 @@ interface RoundButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>,
 
 export function RoundButton({ icon, label, size = 52, silent = false, className, style, onClick, type = 'button', ...rest }: RoundButtonProps) {
   const { audio } = useServices();
+  const click = useUiClick();
   return (
     <button
       type={type}
@@ -21,8 +23,8 @@ export function RoundButton({ icon, label, size = 52, silent = false, className,
       className={['round-button', className].filter(Boolean).join(' ')}
       style={{ ...style, ['--size' as string]: `${size}px` }}
       onClick={(event) => {
-        audio.unlock();
-        if (!silent) audio.play('ui_click', { volume: 0.45 });
+        if (silent) audio.unlock();
+        else click();
         onClick?.(event);
       }}
       {...rest}

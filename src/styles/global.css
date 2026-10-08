@@ -62,14 +62,48 @@ select {
   border: 0;
 }
 
-/* Painted scene behind every menu screen. */
-.scene-backdrop {
+/*
+ * The live sea behind every screen. Until the battle assets have loaded the
+ * canvas is transparent and the painted scene from the asset pack shows.
+ */
+.world-canvas {
   position: fixed;
   inset: 0;
-  background:
-    linear-gradient(rgba(8, 19, 31, 0.35), rgba(8, 19, 31, 0.55)),
-    url('../../assets/ui_scene_background.png') center / cover no-repeat;
-  filter: saturate(0.9);
+  z-index: 0;
+  background: url('../../assets/ui_scene_background.png') center / cover no-repeat;
+}
+
+.world-canvas canvas {
+  display: block;
+}
+
+/*
+ * A screen placed in the world. WorldHost writes its transform every frame
+ * (translate + scale from the camera), so it travels and zooms with the sea.
+ * At rest the transform is identity and the layer is the viewport.
+ */
+.anchored-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow-y: auto;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+/* Static readability layer: dims the world's edges behind menu panels. */
+.world-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(8, 19, 31, 0.1) 30%, rgba(8, 19, 31, 0.5) 100%);
+}
+
+/* The finished arena stays visible behind the result, darker and calmer. */
+.world-vignette[data-strong] {
+  background: radial-gradient(ellipse at center, rgba(8, 19, 31, 0.35) 25%, rgba(8, 19, 31, 0.72) 100%);
+  backdrop-filter: saturate(0.6);
 }
 
 .screen {

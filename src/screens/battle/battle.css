@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   overflow: hidden;
-  background: var(--navy-950);
+  pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
@@ -22,15 +22,6 @@
   opacity: 1;
 }
 
-.game-canvas {
-  position: absolute;
-  inset: 0;
-}
-
-.game-canvas canvas {
-  display: block;
-}
-
 /* ---------- HUD ---------- */
 .hud {
   --hud-scale: 0.85;
@@ -43,6 +34,14 @@
   justify-content: space-between;
   gap: 12px;
   pointer-events: none;
+  animation: hud-enter 0.3s ease-out both;
+}
+
+@keyframes hud-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
 }
 
 .hud button {
@@ -185,6 +184,7 @@
 /* ---------- Touch controls ---------- */
 .touch-controls {
   --button: 66px;
+  animation: hud-enter 0.3s ease-out both;
   position: absolute;
   left: max(12px, env(safe-area-inset-left));
   right: max(12px, env(safe-area-inset-right));
@@ -218,6 +218,8 @@
 
 /* ---------- Dialog ---------- */
 .dialog {
+  /* The battle layer is click-through; its dialog must not inherit that. */
+  pointer-events: auto;
   padding: 0;
   border: 0;
   background: transparent;
@@ -254,6 +256,7 @@
 
 /* ---------- Loading ---------- */
 .loading {
+  pointer-events: auto;
   position: absolute;
   inset: 0;
   display: flex;
@@ -290,6 +293,7 @@
 
 /* ---------- Portrait hint ---------- */
 .rotate-hint {
+  pointer-events: auto;
   position: absolute;
   inset: 0;
   display: flex;

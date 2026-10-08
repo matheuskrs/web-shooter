@@ -1,0 +1,217 @@
+.log-screen .log-panel {
+  width: min(680px, 100%);
+}
+
+.log-panel {
+  width: min(660px, 100%);
+  display: flex;
+  flex-direction: column;
+  padding-top: 6px;
+}
+
+.log-panel__tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.log-panel__tabs .game-button {
+  --scale: 0.78;
+  font-size: 17px;
+  white-space: nowrap;
+}
+
+.log-panel__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.log-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 330px;
+}
+
+.log-tab__caption {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 2px 0 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cream-muted);
+}
+
+.log-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+  font-size: 0.95rem;
+  transition: opacity 0.2s;
+}
+
+/* While a new page loads, the previous page stays readable but quiet. */
+.log-table--paging {
+  opacity: 0.7;
+}
+
+.log-table__skeleton td {
+  height: 41px;
+}
+
+.skeleton-bar {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(248, 236, 210, 0.08) 0%, rgba(248, 236, 210, 0.2) 50%, rgba(248, 236, 210, 0.08) 100%) 0 0 / 200% 100%;
+  animation: skeleton-sweep 1.3s ease-in-out infinite;
+}
+
+@keyframes skeleton-sweep {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.log-table th {
+  padding: 0 12px 2px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--cream-muted);
+}
+
+.log-table td {
+  padding: 9px 12px;
+  background: rgba(8, 19, 31, 0.55);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.log-table td:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.log-table td:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.log-table__row--mine td {
+  background: rgba(242, 195, 91, 0.2);
+  box-shadow: inset 0 1px 0 rgba(242, 195, 91, 0.35), inset 0 -1px 0 rgba(242, 195, 91, 0.35);
+}
+
+.log-table__rank,
+.log-table__score {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.05rem;
+  color: var(--brass);
+}
+
+.log-table__muted {
+  font-weight: 400;
+  font-size: 0.82rem;
+  color: var(--cream-muted);
+}
+
+.log-table__you {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border: 1px solid var(--brass);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.log-table__defeated {
+  color: var(--danger);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.log-table__timeup {
+  color: var(--success);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.log-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--cream-muted);
+}
+
+.log-state p {
+  margin: 0;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.pager__label {
+  min-width: 92px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+
+.log-panel__footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.log-panel__footer .game-button {
+  --scale: 0.72;
+}
+
+@media (max-width: 560px) {
+  .log-table td,
+  .log-table th {
+    padding-inline: 6px;
+  }
+
+  .log-table td {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-height: 500px) {
+  .log-tab {
+    min-height: 0;
+  }
+
+  .log-table td {
+    padding-block: 5px;
+  }
+
+  .log-table__skeleton td {
+    height: 29px;
+  }
+}

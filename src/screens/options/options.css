@@ -49,48 +49,30 @@
   font-size: 1.5rem;
 }
 
-.options-input {
-  width: 3.4ch;
-  padding: 2px 4px;
-  border: 0;
-  border-bottom: 2px solid rgba(248, 236, 210, 0.3);
+/* Ant Design controls, scoped to this form: big display-font numbers like the reference art. */
+.options-number.ant-input-number {
+  /* Room for "180" or "10.5" in the 1.6rem display font. */
+  width: 5.5rem;
   background: transparent;
+  border-width: 0 0 2px;
+  border-radius: 0;
+}
+
+.options-number .ant-input-number-input {
+  padding: 0 2px;
   font-family: var(--font-display);
   font-size: 1.6rem;
   text-align: center;
-  -moz-appearance: textfield;
 }
 
-.options-input::-webkit-outer-spin-button,
-.options-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.options-input[aria-invalid='true'] {
-  border-bottom-color: var(--danger);
-}
-
-.options-input--text {
+.options-text.ant-input {
   width: min(260px, 100%);
-  padding: 6px 10px;
-  border: 2px solid rgba(248, 236, 210, 0.25);
-  border-radius: 8px;
-  background: rgba(8, 19, 31, 0.5);
-  font-family: var(--font-body);
-  font-size: 1rem;
   font-weight: 700;
+  text-align: center;
 }
 
-.options-input--select {
+.options-select.ant-select {
   width: 100%;
-  padding: 8px 10px;
-  border: 2px solid rgba(248, 236, 210, 0.25);
-  border-radius: 8px;
-  background: var(--navy-900);
-  font-family: var(--font-body);
-  font-size: 0.95rem;
-  text-align: left;
 }
 
 .options-toggle {

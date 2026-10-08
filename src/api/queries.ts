@@ -10,7 +10,7 @@ import {
 import { useCallback } from 'react';
 import { PAGE_SIZE, type HistoryPage, type MatchSubmission, type Page, type RankingPage, type RegisterMatchResponse } from './contracts';
 import { fetchHistory, fetchRanking } from './matchesApi';
-import { queryKeys, registerMatchKey } from './queryClient';
+import { queryKeys, quietRegistrations, registerMatchKey } from './queryClient';
 
 /**
  * Second line of defence against stale responses. TanStack Query already
@@ -68,7 +68,9 @@ export function useSubmitMatch() {
   const client = useQueryClient();
   const { mutate } = useRegisterMatch();
   return useCallback(
-    (submission: MatchSubmission) => {
+    (submission: MatchSubmission, { quiet = false }: { quiet?: boolean } = {}) => {
+      if (quiet) quietRegistrations.add(submission.matchId);
+      else quietRegistrations.delete(submission.matchId);
       const alreadyRunning = client
         .getMutationCache()
         .findAll({ mutationKey: registerMatchKey, status: 'pending' })

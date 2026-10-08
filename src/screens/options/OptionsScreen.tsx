@@ -1,3 +1,4 @@
+import { Input, InputNumber } from 'antd';
 import { useState, type FormEvent } from 'react';
 import { GameButton } from '../../components/GameButton';
 import { RoundButton } from '../../components/RoundButton';
@@ -9,6 +10,7 @@ import {
 } from '../../game/config/gameConfig';
 import { CAPTAIN_NAME_MAX_LENGTH, isValidCaptainName, preferencesStore } from '../../storage/preferences';
 import { useStoredValue } from '../../storage/storedValue';
+import { useUiClick } from '../../hooks/useUiClick';
 import { NetworkSimulationPanel } from './NetworkSimulationPanel';
 import './options.css';
 
@@ -45,6 +47,7 @@ function stepValue(value: string, direction: 1 | -1, limits: { min: number; max:
 
 export function OptionsScreen({ onBack }: { onBack: () => void }) {
   const saved = useStoredValue(preferencesStore);
+  const click = useUiClick();
   const [draft, setDraft] = useState<Draft>(() => ({
     sessionSeconds: String(saved.sessionSeconds),
     spawnIntervalSeconds: String(saved.spawnIntervalSeconds),
@@ -80,7 +83,6 @@ export function OptionsScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <>
-      <div className="scene-backdrop" aria-hidden="true" />
       <main className="screen">
         <form className="panel options-panel" aria-labelledby="options-title" onSubmit={save} noValidate>
           <h1 id="options-title" className="panel__title">
@@ -114,12 +116,13 @@ export function OptionsScreen({ onBack }: { onBack: () => void }) {
             <label htmlFor="captain-name" className="options-field__label">
               Captain name
             </label>
-            <input
+            <Input
               id="captain-name"
-              className="options-input options-input--text"
+              className="options-text"
               value={draft.captainName}
               maxLength={CAPTAIN_NAME_MAX_LENGTH + 4}
               autoComplete="nickname"
+              status={errors.captainName ? 'error' : ''}
               aria-invalid={errors.captainName !== null}
               aria-describedby={errors.captainName ? 'captain-name-error' : undefined}
               onChange={(event) => change({ captainName: event.target.value })}
@@ -132,7 +135,14 @@ export function OptionsScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           <label className="options-toggle">
-            <input type="checkbox" checked={!draft.muted} onChange={(event) => change({ muted: !event.target.checked })} />
+            <input
+              type="checkbox"
+              checked={!draft.muted}
+              onChange={(event) => {
+                click();
+                change({ muted: !event.target.checked });
+              }}
+            />
             <span>Sound effects</span>
           </label>
 
@@ -178,16 +188,18 @@ function StepperField({ id, label, unit, value, error, hint, step, onChange, onS
       <div className="options-stepper">
         <RoundButton icon="minus" label={`Decrease ${label.toLowerCase()}`} size={44} onClick={() => onStep(-1)} />
         <span className="options-stepper__value">
-          <input
+          {/* Validation is ours (with a visible message), so no min/max clamping here. */}
+          <InputNumber
             id={id}
-            className="options-input"
+            className="options-number"
+            controls={false}
             inputMode="decimal"
-            type="number"
             step={step}
-            value={value}
+            value={value.trim() === '' || Number.isNaN(Number(value)) ? null : Number(value)}
+            status={error ? 'error' : ''}
             aria-invalid={error !== null}
             aria-describedby={described}
-            onChange={(event) => onChange(event.target.value)}
+            onChange={(next) => onChange(next === null ? '' : String(next))}
           />
           <span aria-hidden="true">{unit}</span>
         </span>

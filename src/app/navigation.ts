@@ -1,10 +1,12 @@
 import { useSyncExternalStore } from 'react';
 
-export type Route = 'menu' | 'options' | 'battle' | 'result';
+export type Route = 'menu' | 'options' | 'ranking' | 'history' | 'battle' | 'result';
 
 const ROUTE_HASH: Readonly<Record<Route, string>> = {
   menu: '#/',
   options: '#/options',
+  ranking: '#/ranking',
+  history: '#/history',
   battle: '#/battle',
   result: '#/result',
 };
@@ -14,17 +16,41 @@ function parseRoute(hash: string): Route {
   return match?.[0] ?? 'menu';
 }
 
+export interface NavigationState {
+  route: Route;
+  /** The screen before this one; it stays on screen while the camera leaves it. */
+  previous: Route | null;
+  /** Increments on every navigation; keys screens so each visit starts fresh. */
+  visit: number;
+}
+
+let state: NavigationState = {
+  route: typeof window === 'undefined' ? 'menu' : parseRoute(window.location.hash),
+  previous: null,
+  visit: 0,
+};
+
 function subscribe(listener: () => void): () => void {
   window.addEventListener('hashchange', listener);
   return () => window.removeEventListener('hashchange', listener);
 }
 
+function readState(): NavigationState {
+  const route = parseRoute(window.location.hash);
+  if (route !== state.route) state = { route, previous: state.route, visit: state.visit + 1 };
+  return state;
+}
+
 /**
  * Hash routing keeps the back button and refresh meaningful without a
- * router dependency. Four screens do not need more than this.
+ * router dependency. Six screens do not need more than this.
  */
 export function useRoute(): Route {
-  return useSyncExternalStore(subscribe, () => parseRoute(window.location.hash));
+  return useSyncExternalStore(subscribe, () => readState().route);
+}
+
+export function useNavigation(): NavigationState {
+  return useSyncExternalStore(subscribe, readState);
 }
 
 export function navigate(route: Route, { replace = false } = {}): void {

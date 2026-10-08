@@ -1,7 +1,7 @@
 import type { MatchSubmission } from '../api/contracts';
 import { configKeyOf, createMatchConfig, RULESET_VERSION, type PlayerGameOptions } from '../game/config/gameConfig';
 import type { MatchOutcome } from '../game/core/GameSession';
-import type { MatchSetup } from '../screens/battle/BattleScreen';
+import type { MatchSetup } from '../game/world/WorldHost';
 
 /** A new match: fresh id (also the idempotency key), seed and frozen config snapshot. */
 export function createMatch(options: PlayerGameOptions, seedOverride: number | null): MatchSetup {

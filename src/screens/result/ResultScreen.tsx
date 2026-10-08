@@ -7,6 +7,7 @@ import { PerfReportPanel } from '../battle/PerfOverlay';
 import { lastResultStore, pendingMatchesStore } from '../../storage/matchStorage';
 import { useStoredValue } from '../../storage/storedValue';
 import { formatClock } from '../../utils/format';
+import { useUiClick } from '../../hooks/useUiClick';
 import './result.css';
 
 type RegistrationState = 'saved' | 'saving' | 'failed' | 'queued';
@@ -22,6 +23,7 @@ export function ResultScreen({ onPlayAgain, onMenu }: { onPlayAgain: () => void;
   const last = useStoredValue(lastResultStore);
   const pending = useStoredValue(pendingMatchesStore);
   const submitMatch = useSubmitMatch();
+  const click = useUiClick();
   const matchId = last?.submission.matchId;
   const registering = useIsRegistering(matchId);
 
@@ -43,8 +45,7 @@ export function ResultScreen({ onPlayAgain, onMenu }: { onPlayAgain: () => void;
 
   return (
     <>
-      <div className="scene-backdrop" aria-hidden="true" />
-      <main className="screen">
+      <main className="screen result-screen">
         <section className="panel result-panel" aria-labelledby="result-title">
           <h1 id="result-title" className="panel__title">
             {defeated ? 'Ship Sunk' : 'Battle Complete'}
@@ -65,12 +66,18 @@ export function ResultScreen({ onPlayAgain, onMenu }: { onPlayAgain: () => void;
           <div className={`result-registration result-registration--${state}`} role="status" data-state={state}>
             <span>{REGISTRATION_TEXT[state]}</span>
             {(state === 'failed' || state === 'queued') && (
-              <button type="button" className="link-button" onClick={() => submitMatch(submission)}>
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => {
+                  click();
+                  submitMatch(submission);
+                }}
+              >
                 Retry now
               </button>
             )}
           </div>
-          {state === 'failed' && pendingEntry?.lastError && <p className="result-registration__detail">{pendingEntry.lastError}</p>}
 
           <div className="result-panel__actions">
             <GameButton autoFocus onClick={onPlayAgain}>

@@ -1,5 +1,5 @@
 import type { ComponentPropsWithRef } from 'react';
-import { useServices } from '../app/services';
+import { useUiClick } from '../hooks/useUiClick';
 
 interface GameButtonProps extends ComponentPropsWithRef<'button'> {
   variant?: 'primary' | 'secondary';
@@ -8,7 +8,7 @@ interface GameButtonProps extends ComponentPropsWithRef<'button'> {
 
 /** A real <button> dressed in the official wooden button art (normal/hover/pressed/disabled). */
 export function GameButton({ variant = 'primary', size = 'normal', className, onClick, type = 'button', ...rest }: GameButtonProps) {
-  const { audio } = useServices();
+  const click = useUiClick();
   const classes = ['game-button', `game-button--${variant}`, size === 'small' && 'game-button--small', className]
     .filter(Boolean)
     .join(' ');
@@ -17,8 +17,7 @@ export function GameButton({ variant = 'primary', size = 'normal', className, on
       type={type}
       className={classes}
       onClick={(event) => {
-        audio.unlock();
-        audio.play('ui_click', { volume: 0.5 });
+        click();
         onClick?.(event);
       }}
       {...rest}

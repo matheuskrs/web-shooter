@@ -1,0 +1,52 @@
+/* react-hot-toast positions the container; keep it clear of the bottom safe area. */
+.pirate-toaster {
+  bottom: max(18px, env(safe-area-inset-bottom)) !important;
+}
+
+/* toast_frame.png: the provided Toast.png cropped to its art (960x199). */
+.pirate-toast {
+  position: relative;
+  width: min(460px, calc(100vw - 32px));
+  aspect-ratio: 960 / 199;
+  background: url('../../../assets/png/toast_frame.png') center / 100% 100% no-repeat;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.45));
+  pointer-events: auto;
+}
+
+/* Inset relative to the frame itself, keeping the text on the planks and clear of the brass corners. */
+.pirate-toast__text {
+  position: absolute;
+  inset: 0 12% 3%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: clamp(0.82rem, 2.6vw, 1.05rem);
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: #2a1506;
+  text-shadow: 0 1px 0 rgba(255, 226, 170, 0.45);
+}
+
+.pirate-toast--in {
+  animation: toast-in 0.24s cubic-bezier(0.2, 1.25, 0.4, 1) both;
+}
+
+.pirate-toast--out {
+  animation: toast-out 0.18s ease-in forwards;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.92);
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+}

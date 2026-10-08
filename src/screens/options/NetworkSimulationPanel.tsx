@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { Select } from 'antd';
 import { useState } from 'react';
 import { useSubmitMatch } from '../../api/queries';
 import { queryKeys } from '../../api/queryClient';
@@ -6,6 +7,7 @@ import { resetMockServer, scenarioStore } from '../../mocks/mockState';
 import { findScenario, SCENARIOS, type ScenarioId } from '../../mocks/scenarios';
 import { pendingMatchesStore } from '../../storage/matchStorage';
 import { useStoredValue } from '../../storage/storedValue';
+import { useUiClick } from '../../hooks/useUiClick';
 
 /**
  * Developer tools for the simulated ranking/history backend. Kept collapsed
@@ -17,6 +19,7 @@ export function NetworkSimulationPanel() {
   const pending = useStoredValue(pendingMatchesStore);
   const submitMatch = useSubmitMatch();
   const queryClient = useQueryClient();
+  const click = useUiClick();
   const [message, setMessage] = useState('');
   const scenario = findScenario(scenarioId);
 
@@ -27,22 +30,20 @@ export function NetworkSimulationPanel() {
         <label htmlFor="scenario" className="options-field__label">
           Mock API scenario
         </label>
-        <select
+        <Select<ScenarioId>
           id="scenario"
-          className="options-input options-input--select"
+          className="options-select"
+          // A short list: render every option so all of them are reachable by assistive tech.
+          virtual={false}
           value={scenarioId}
           aria-describedby="scenario-description"
-          onChange={(event) => {
-            scenarioStore.set(event.target.value as ScenarioId);
+          options={SCENARIOS.map((item) => ({ value: item.id, label: item.label }))}
+          onChange={(next) => {
+            click();
+            scenarioStore.set(next);
             setMessage('');
           }}
-        >
-          {SCENARIOS.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.label}
-            </option>
-          ))}
-        </select>
+        />
         <p id="scenario-description" className="options-field__hint">
           {scenario.description}
         </p>
@@ -57,6 +58,7 @@ export function NetworkSimulationPanel() {
             className="netsim__button"
             disabled={pending.length === 0}
             onClick={() => {
+              click();
               for (const item of pending) submitMatch(item.submission);
               setMessage('Retrying pending uploads…');
             }}
@@ -67,6 +69,7 @@ export function NetworkSimulationPanel() {
             type="button"
             className="netsim__button"
             onClick={() => {
+              click();
               resetMockServer();
               queryClient.removeQueries({ queryKey: queryKeys.all });
               setMessage('Mock server reset to its initial fixtures and the Success scenario.');

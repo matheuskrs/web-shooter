@@ -17,6 +17,13 @@ export const queryKeys = {
 
 export const registerMatchKey = ['pirate-battle', 'register-match'] as const;
 
+/**
+ * Matches re-sent in the background (pending recovery at start-up). Their
+ * failures stay quiet: the menu already shows "battles waiting to be logged",
+ * and a toast the player did not trigger reads like an unexplained error.
+ */
+export const quietRegistrations = new Set<string>();
+
 function shouldRetry(failureCount: number, error: unknown): boolean {
   return failureCount < MAX_RETRIES && toApiError(error).retryable;
 }
@@ -25,7 +32,12 @@ function retryDelay(attempt: number): number {
   return fastRetries ? 100 : Math.min(800 * 2 ** attempt, 4000);
 }
 
-export function createQueryClient(): QueryClient {
+export interface QueryClientHooks {
+  /** A match could not be registered after all retries (it stays pending). */
+  onRegistrationFailed?: (error: unknown) => void;
+}
+
+export function createQueryClient(hooks: QueryClientHooks = {}): QueryClient {
   const client: QueryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -51,6 +63,7 @@ export function createQueryClient(): QueryClient {
     retryDelay,
     onSuccess: (response: RegisterMatchResponse) => {
       const matchId = response.record.matchId;
+      quietRegistrations.delete(matchId);
       removePendingMatch(matchId);
       const last = lastResultStore.get();
       if (last?.submission.matchId === matchId) lastResultStore.set({ ...last, confirmed: true });
@@ -59,6 +72,7 @@ export function createQueryClient(): QueryClient {
     },
     onError: (error: unknown, submission: MatchSubmission) => {
       markPendingAttempt(submission.matchId, toApiError(error).message);
+      if (!quietRegistrations.delete(submission.matchId)) hooks.onRegistrationFailed?.(error);
     },
   });
 
